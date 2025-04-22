@@ -1,0 +1,56 @@
+//@version=5    Narasi@
+indicator("Candlestick Patterns + S/R + Supply/Demand", overlay=true)
+
+// === Candlestick Patterns ===
+bullishEngulfing = close[1] < open[1] and close > open and close > open[1] and open < close[1]
+bearishEngulfing = close[1] > open[1] and close < open and close < open[1] and open > close[1]
+doji = math.abs(close - open) <= (high - low) * 0.1
+hammer = (high - low) > 3 * math.abs(open - close) and (close - low) / (high - low) > 0.6 and (open - low) / (high - low) > 0.6
+invHammer = (high - low) > 3 * math.abs(open - close) and (high - close) / (high - low) > 0.6 and (high - open) / (high - low) > 0.6
+shootingStar = invHammer and close < open
+
+plotshape(bullishEngulfing, title="Bullish Engulfing", location=location.belowbar, color=color.green, style=shape.labelup, text="Bull Engulf")
+plotshape(bearishEngulfing, title="Bearish Engulfing", location=location.abovebar, color=color.red, style=shape.labeldown, text="Bear Engulf")
+plotshape(doji, title="Doji", location=location.abovebar, color=color.gray, style=shape.cross, text="Doji")
+plotshape(hammer, title="Hammer", location=location.belowbar, color=color.green, style=shape.labelup, text="Hammer")
+plotshape(invHammer, title="Inverted Hammer", location=location.abovebar, color=color.blue, style=shape.labeldown, text="InvHammer")
+plotshape(shootingStar, title="Shooting Star", location=location.abovebar, color=color.orange, style=shape.labeldown, text="ShootStar")
+
+// === Auto Support & Resistance ===
+pivotHigh = ta.pivothigh(high, 5, 5)
+pivotLow = ta.pivotlow(low, 5, 5)
+
+resistanceLevel = na(pivotHigh) ? na : high[5]
+supportLevel = na(pivotLow) ? na : low[5]
+
+var float[] resistances = array.new_float()
+var float[] supports = array.new_float()
+
+if not na(resistanceLevel)
+    array.push(resistances, resistanceLevel)
+if not na(supportLevel)
+    array.push(supports, supportLevel)
+
+maxLevels = 10
+if array.size(resistances) > maxLevels
+    array.shift(resistances)
+if array.size(supports) > maxLevels
+    array.shift(supports)
+
+// Draw lines only if arrays are not empty
+if array.size(resistances) > 0
+    for i = 0 to array.size(resistances) - 1
+        line.new(bar_index - 20, array.get(resistances, i), bar_index, array.get(resistances, i), color=color.red, width=1, extend=extend.right)
+
+if array.size(supports) > 0
+    for i = 0 to array.size(supports) - 1
+        line.new(bar_index - 20, array.get(supports, i), bar_index, array.get(supports, i), color=color.green, width=1, extend=extend.right)
+
+// === Supply & Demand Zones ===
+sdLookback = 30
+
+supplyZone = ta.highest(high, sdLookback)
+demandZone = ta.lowest(low, sdLookback)
+
+plot(supplyZone, title="Supply Zone", color=color.fuchsia, style=plot.style_linebr, linewidth=2)
+plot(demandZone, title="Demand Zone", color=color.aqua, style=plot.style_linebr, linewidth=2)
