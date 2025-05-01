@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Scalper PRO - World's Highest Profitable MQL5 Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        .signal-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .signal-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .signal-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+            pointer-events: none;
+        }
+        .buy-signal {
+            border-left: 4px solid #10B981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+        }
+        .sell-signal {
+            border-left: 4px solid #EF4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+        }
+        .chart-container {
+            height: 450px;
+            background-color: #1E293B;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+        .profit-indicator {
+            background: linear-gradient(90deg, #10B981 0%, #3B82F6 100%);
+        }
+        .blink {
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+        @keyframes blink-animation {
+            to { visibility: hidden; }
+        }
+        .glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .tabs button.active {
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.1), transparent);
+            border-bottom: 2px solid #3B82F6;
+            color: #3B82F6;
+            font-weight: 600;
+        }
+        .badge-premium {
+            background: linear-gradient(90deg, #F59E0B 0%, #EF4444 100%);
+            color: white;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Premium Header -->
+        <header class="mb-8 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-xl p-6 text-white shadow-lg">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <div class="flex items-center mb-2">
+                        <h1 class="text-3xl font-bold mr-3">Quantum Scalper PRO</h1>
+                        <span class="badge-premium px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Elite Edition</span>
+                    </div>
+                    <p class="text-blue-200">World's Highest Profit Scalping EA for MQL5 • 89.7% Win Rate • 5.8 Profit Factor</p>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <div class="bg-green-500/20 px-4 py-2 rounded-full flex items-center backdrop-blur-sm">
+                        <span class="w-3 h-3 bg-green-400 rounded-full mr-2 pulse"></span>
+                        <span class="text-sm font-medium">Live Trading Active</span>
+                    </div>
+                    <button class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-3 rounded-lg flex items-center shadow-lg hover:shadow-xl transition-all">
+                        <i class="fas fa-rocket mr-2"></i> Upgrade to VIP
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Performance Banner -->
+        <div class="bg-white rounded-xl shadow-md mb-8 p-5 border-l-4 border-blue-500">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-trophy text-blue-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">Current Session Performance</h3>
+                        <p class="text-sm text-gray-600">Real-time tracking of Quantum Scalper PRO</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full md:w-auto">
+                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-green-600 font-medium">Today's Profit</p>
+                        <p class="text-xl font-bold text-green-700">+$1,842.50</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-blue-600 font-medium">Win Rate</p>
+                        <p class="text-xl font-bold text-blue-700">87.5%</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-purple-600 font-medium">Trades Today</p>
+                        <p class="text-xl font-bold text-purple-700">24</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-amber-600 font-medium">Profit Factor</p>
+                        <p class="text-xl font-bold text-amber-700">6.2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Chart and Controls -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Chart with Advanced Controls -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="flex justify-between items-center bg-gray-50 px-6 py-4 border-b">
+                        <div class="tabs flex space-x-1">
+                            <button class="tab active px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="eurusd">
+                                <i class="fas fa-euro-sign mr-1"></i> EUR/USD
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="gbpusd">
+                                <i class="fas fa-pound-sign mr-1"></i> GBP/USD
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="usdjpy">
+                                <i class="fas fa-yen-sign mr-1"></i> USD/JPY
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="gold">
+                                <i class="fas fa-coins mr-1"></i> XAU/USD
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option>M5</option>
+                                <option selected>M15</option>
+                                <option>H1</option>
+                            </select>
+                            <button class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container p-4">
+                        <!-- Advanced Chart Placeholder with Indicators -->
+                        <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line text-6xl mb-4 opacity-20"></i>
+                                <p class="text-lg font-medium">Quantum Scalper PRO Live Chart</p>
+                                <p class="text-sm mt-1">EMA(3,5,8) + RSI + Volume Profile</p>
+                            </div>
+                        </div>
+                        <!-- Simulated Price Line -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 animate-pulse"></div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                <span class="text-xs">EMA(3)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span class="text-xs">EMA(5)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                <span class="text-xs">EMA(8)</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-medium">Bid: <span class="text-green-500">1.09542</span></span>
+                            <span class="text-xs font-medium mx-2">|</span>
+                            <span class="text-xs font-medium">Ask: <span class="text-red-500">1.09545</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quantum Algorithm Settings -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-atom text-blue-500 mr-2"></i>
+                            Quantum Algorithm Parameters
+                        </h2>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">Adaptive Mode</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-wave-square text-sm text-blue-500 mr-2"></i>
+                                Wave Detection
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Impulse Sensitivity</label>
+                                    <input type="range" min="1" max="10" value="7" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Retracement Threshold</label>
+                                    <input type="number" value="38.2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-chess-clock text-sm text-purple-500 mr-2"></i>
+                                Time Analysis
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Session Filter</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>London/NY Overlap</option>
+                                        <option selected>Asian Session</option>
+                                        <option>All Market Hours</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Timeframe Weighting</label>
+                                    <div class="flex space-x-2">
+                                        <input type="number" placeholder="M5" value="30" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                        <input type="number" placeholder="M15" value="50" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                        <input type="number" placeholder="H1" value="20" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-shield-alt text-sm text-green-500 mr-2"></i>
+                                Risk Nexus
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dynamic Lot Sizing</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>Conservative</option>
+                                        <option selected>Aggressive</option>
+                                        <option>Martingale</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Daily Risk (%)</label>
+                                    <input type="number" value="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-4 border-t">
+                        <div class="flex items-center">
+                            <input id="auto-optimize" type="checkbox" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="auto-optimize" class="ml-2 text-sm font-medium text-gray-700">Auto-Optimize Parameters</label>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-undo mr-1"></i> Reset
+                            </button>
+                            <button class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-md hover:from-blue-700 hover:to-blue-800 transition-all shadow-md">
+                                <i class="fas fa-save mr-1"></i> Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Signals and Stats -->
+            <div class="space-y-6">
+                <!-- Quantum Signals -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-800 to-blue-600 px-6 py-4">
+                        <h2 class="text-lg font-semibold text-white flex items-center">
+                            <i class="fas fa-bolt text-yellow-300 mr-2"></i>
+                            Quantum Signals
+                            <span class="ml-auto bg-white/20 px-2 py-1 rounded-full text-xs">LIVE</span>
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+                        <!-- High Probability Signal -->
+                        <div class="signal-card buy-signal p-4 hover:bg-gray-50/50 cursor-pointer glow">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">STRONG BUY</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">98% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">1.09542</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">1.09392</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">1.09642</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">1.09792</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-blue-600 text-white px-2 py-1 rounded mb-1">Quantum Wave</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> <span class="blink">Just Now</span>
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full">
+                                            Execute <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sell Signal with Multiple TPs -->
+                        <div class="signal-card sell-signal p-4 hover:bg-gray-50/50 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">SELL</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">87% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">143.852</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">144.002</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">143.702</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">143.552</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-purple-600 text-white px-2 py-1 rounded mb-1">EMA Rejection</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> 3 min ago
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full">
+                                            Closed +25.0 <i class="fas fa-check ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gold Scalp Signal -->
+                        <div class="signal-card buy-signal p-4 hover:bg-gray-50/50 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">BUY</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">92% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">1942.35</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">1939.85</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">1944.85</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">1947.35</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-amber-600 text-white px-2 py-1 rounded mb-1">Liquidity Grab</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> 8 min ago
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full">
+                                            Closed +12.5 <i class="fas fa-check ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 text-center border-t">
+                        <button class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center w-full">
+                            <i class="fas fa-history mr-2"></i> View Signal History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Performance Dashboard -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                        Performance Dashboard
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Monthly Profit Target</span>
+                            <span class="text-sm font-bold text-green-600">$8,420/$10,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style="width: 84%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-xs text-blue-600 font-medium">Win Rate</p>
+                            <p class="text-2xl font-bold text-blue-700">89.7%</p>
+                            <p class="text-xs text-gray-500 mt-1">Last 100 trades</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-xs text-green-600 font-medium">Profit Factor</p>
+                            <p class="text-2xl font-bold text-green-700">5.8</p>
+                            <p class="text-xs text-gray-500 mt-1">Industry best</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg">
+                            <p class="text-xs text-purple-600 font-medium">Avg Win</p>
+                            <p class="text-2xl font-bold text-purple-700">$142.50</p>
+                            <p class="text-xs text-gray-500 mt-1">Per trade</p>
+                        </div>
+                        <div class="bg-amber-50 p-3 rounded-lg">
+                            <p class="text-xs text-amber-600 font-medium">Avg Loss</p>
+                            <p class="text-2xl font-bold text-amber-700">$48.20</p>
+                            <p class="text-xs text-gray-500 mt-1">Risk control</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-xs font-medium text-gray-600">Account Growth</p>
+                            <p class="text-sm font-bold text-green-600">+47.8%</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="profit-indicator h-2 rounded-full" style="width: 78%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">30-day performance</p>
+                    </div>
+                </div>
+
+                <!-- Quantum Execution -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                        Quantum Execution
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-play-circle text-xl mb-1"></i>
+                            Start EA
+                        </button>
+                        <button class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-stop-circle text-xl mb-1"></i>
+                            Emergency Stop
+                        </button>
+                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-sync-alt text-xl mb-1"></i>
+                            Force Close All
+                        </button>
+                        <button class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-robot text-xl mb-1"></i>
+                            Auto Recovery
+                        </button>
+                    </div>
+                    <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <span class="font-medium">Warning:</span> News event detected in 15min. Reduced risk mode activated.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Analytics -->
+        <div class="mt-8 bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold flex items-center">
+                    <i class="fas fa-chart-bar text-indigo-500 mr-2"></i>
+                    Quantum Analytics
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-indigo-600 uppercase tracking-wide">Most Profitable</p>
+                                <p class="text-xl font-bold text-indigo-800 mt-1">EUR/USD</p>
+                                <p class="text-sm text-indigo-600">+$3,842.50</p>
+                            </div>
+                            <div class="bg-indigo-100 p-2 rounded-full">
+                                <i class="fas fa-euro-sign text-indigo-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Win Rate</span>
+                                <span>92.3%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 92%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Best Time</p>
+                                <p class="text-xl font-bold text-blue-800 mt-1">08:00-10:00 GMT</p>
+                                <p class="text-sm text-blue-600">+$2,715.30</p>
+                            </div>
+                            <div class="bg-blue-100 p-2 rounded-full">
+                                <i class="fas fa-clock text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Success Rate</span>
+                                <span>88.7%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-blue-600 h-1.5 rounded-full" style="width: 89%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-green-600 uppercase tracking-wide">Optimal Lot</p>
+                                <p class="text-xl font-bold text-green-800 mt-1">0.5 - 1.2</p>
+                                <p class="text-sm text-green-600">Max efficiency range</p>
+                            </div>
+                            <div class="bg-green-100 p-2 rounded-full">
+                                <i class="fas fa-balance-scale text-green-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Risk/Reward</span>
+                                <span>1:3.8</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-green-600 h-1.5 rounded-full" style="width: 79%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trades</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Profit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P/L</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">EUR/USD</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">47</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 92%"></div>
+                                        </div>
+                                        <span>92%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$136.50</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$6,415.50</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-blue-600 hover:text-blue-800">Optimize</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">GBP/USD</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">32</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 84%"></div>
+                                        </div>
+                                        <span>84%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$118.20</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$3,782.40</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-blue-600 hover:text-blue-800">Optimize</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">USD/JPY</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">28</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 79%"></div>
+                                        </div>
+                                        <span>79%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$87.50</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$2,450.00</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-blue-600 hover:text-blue-800">Optimize</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIP Upgrade Banner -->
+        <div class="mt-8 bg-gradient-to-r from-purple-900 to-blue-900 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-8 text-center">
+                <h2 class="text-2xl font-bold text-white mb-2">Unlock Quantum Scalper PRO VIP</h2>
+                <p class="text-purple-200 mb-6 max-w-2xl mx-auto">Get exclusive access to our premium signals, advanced risk management modules, and 24/7 priority support.</p>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
+                        <p class="text-white font-medium">Monthly</p>
+                        <p class="text-3xl font-bold text-white">$297<span class="text-sm font-normal">/month</span></p>
+                    </div>
+                    <div class="bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-lg shadow-lg transform scale-105">
+                        <p class="text-white font-medium">Lifetime Access</p>
+                        <p class="text-3xl font-bold text-white">$997<span class="text-sm font-normal">/one-time</span></p>
+                        <span class="text-xs bg-white text-amber-600 px-2 py-0.5 rounded-full mt-1 inline-block">BEST VALUE</span>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
+                        <p class="text-white font-medium">Yearly</p>
+                        <p class="text-3xl font-bold text-white">$2,497<span class="text-sm font-normal">/year</span></p>
+                    </div>
+                </div>
+                <button class="mt-8 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white font-bold py-3 px-8 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300">
+                    <i class="fas fa-gem mr-2"></i> Upgrade to VIP Now
+                </button>
+                <p class="mt-4 text-sm text-purple-200">30-day money back guarantee • Join 1,200+ elite traders</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-8 pb-12 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <div class="bg-blue-600 text-white p-2 rounded-lg mr-3">
+                            <i class="fas fa-robot text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Quantum Scalper PRO</h3>
+                            <p class="text-sm text-gray-600">Elite Edition v3.2.1</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Product</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Features</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Pricing</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Support</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Help Center</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Community</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Legal</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Privacy</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Terms</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-blue-600">Risk Disclosure</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-12 text-center text-sm text-gray-500">
+                <p>© 2023 Quantum Trading Technologies. All rights reserved.</p>
+                <p class="mt-1">Trading forex and CFDs carries a high level of risk and may not be suitable for all investors.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                console.log('Switched to:', this.dataset.tab);
+            });
+        });
+
+        // Simulate live price updates
+        function updatePrices() {
+            const pairs = {
+                eurusd: { bid: 1.09500 + Math.random() * 0.001, ask: 0.00003 },
+                gbpusd: { bid: 1.27400 + Math.random() * 0.001, ask: 0.00003 },
+                usdjpy: { bid: 143.800 + Math.random() * 0.2, ask: 0.03 },
+                gold: { bid: 1940.50 + Math.random() * 3, ask: 0.5 }
+            };
+            
+            const activeTab = document.querySelector('.tab.active').dataset.tab;
+            const currentPair = pairs[activeTab];
+            
+            document.querySelectorAll('.text-right .text-xs.font-medium').forEach(el => {
+                if (el.textContent.includes('Bid:')) {
+                    el.innerHTML = `Bid: <span class="text-green-500">${currentPair.bid.toFixed(5)}</span>`;
+                }
+                if (el.textContent.includes('Ask:')) {
+                    el.innerHTML = `Ask: <span class="text-red-500">${(currentPair.bid + currentPair.ask).toFixed(5)}</span>`;
+                }
+            });
+        }
+        setInterval(updatePrices, 1000);
+
+        // Simulate new signal notification
+        setInterval(() => {
+            const signals = [
+                {
+                    type: "BUY",
+                    symbol: "EUR/USD",
+                    entry: (1.09500 + Math.random() * 0.0005).toFixed(5),
+                    confidence: Math.floor(85 + Math.random() * 15),
+                    strategy: ["Quantum Wave", "EMA Breakout", "Liquidity Grab"][Math.floor(Math.random() * 3)]
+                },
+                {
+                    type: "SELL",
+                    symbol: "USD/JPY",
+                    entry: (143.800 + Math.random() * 0.1).toFixed(3),
+                    confidence: Math.floor(80 + Math.random() * 15),
+                    strategy: ["EMA Rejection", "Trend Exhaustion", "Fibonacci Pin"][Math.floor(Math.random() * 3)]
+                },
+                {
+                    type: "BUY",
+                    symbol: "XAU/USD",
+                    entry: (1940.50 + Math.random() * 2).toFixed(2),
+                    confidence: Math.floor(75 + Math.random() * 20),
+                    strategy: ["Support Bounce", "Order Block", "Institutional Level"][Math.floor(Math.random() * 3)]
+                }
+            ];
+            
+            const randomSignal = signals[Math.floor(Math.random() * signals.length)];
+            const signalsContainer = document.querySelector('.divide-y');
+            
+            const newSignal = document.createElement('div');
+            newSignal.className = `signal-card ${randomSignal.type === 'BUY' ? 'buy-signal' : 'sell-signal'} p-4 hover:bg-gray-50/50 cursor-pointer glow`;
+            newSignal.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center mb-1">
+                            <span class="${randomSignal.type === 'BUY' ? 'bg-green-500' : 'bg-red-500'} text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">${randomSignal.type}</span>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">${randomSignal.confidence}% Confidence</span>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">${randomSignal.entry}</span></p>
+                            <div class="flex space-x-4 mt-1">
+                                <p class="text-xs font-medium">SL: <span class="text-red-500">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) - 0.0015).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)) : (parseFloat(randomSignal.entry) + 0.0015).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)))}</span></p>
+                                <p class="text-xs font-medium">TP1: <span class="text-green-500">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) + 0.0010).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)) : (parseFloat(randomSignal.entry) - 0.0010).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)))}</span></p>
+                                <p class="text-xs font-medium">TP2: <span class="text-green-700">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) + 0.0025).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)) : (parseFloat(randomSignal.entry) - 0.0025).toFixed(randomSignal.symbol === 'XAU/USD' ? 2 : (randomSignal.symbol === 'USD/JPY' ? 3 : 5)))}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs ${randomSignal.strategy === 'Quantum Wave' ? 'bg-blue-600' : randomSignal.strategy === 'EMA Breakout' ? 'bg-purple-600' : 'bg-amber-600'} text-white px-2 py-1 rounded mb-1">${randomSignal.strategy}</div>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i> <span class="blink">Just Now</span>
+                        </p>
+                        <div class="mt-2 flex justify-end">
+                            <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full">
+                                Execute <i class="fas fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            signalsContainer.prepend(newSignal);
+            
+            // Flash notification
+            document.title = "⚡ New Signal - Quantum Scalper PRO";
+            setTimeout(() => {
+                document.title = "Quantum Scalper PRO - World's Highest Profitable MQL5 Bot";
+            }, 2000);
+            
+            // Add notification sound in a real implementation
+            console.log('New signal notification:', randomSignal);
+        }, 15000); // Every 15 seconds for demo
+
+        // Make the first signal glow
+        setInterval(() => {
+            const firstSignal = document.querySelector('.divide-y .signal-card');
+            if (firstSignal) {
+                firstSignal.classList.toggle('glow');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
