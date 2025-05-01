@@ -1,44 +1,866 @@
-This code appears to be a sophisticated MetaTrader 5 Expert Advisor (EA) called "Quantum Scalper PRO" that implements a scalping trading strategy. Let me analyze its key components:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOLD SCALPER PRO - World's Most Profitable XAU/USD Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse-gold {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-gold {
+            animation: pulse-gold 1.5s infinite;
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #FDB927 0%, #FFD700 50%, #D4AF37 100%);
+        }
+        .gold-border {
+            border-image: linear-gradient(to right, #D4AF37, #FFD700) 1;
+        }
+        .signal-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .signal-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(253, 185, 39, 0.15);
+        }
+        .signal-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,215,0,0.05) 0%, rgba(255,215,0,0) 60%);
+            pointer-events: none;
+        }
+        .buy-signal {
+            border-left: 4px solid #10B981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+        }
+        .sell-signal {
+            border-left: 4px solid #EF4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+        }
+        .chart-container {
+            height: 450px;
+            background-color: #1E293B;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+        .profit-indicator {
+            background: linear-gradient(90deg, #FDB927 0%, #FFD700 100%);
+        }
+        .blink {
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+        @keyframes blink-animation {
+            to { visibility: hidden; }
+        }
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(253, 185, 39, 0.5);
+        }
+        .tabs button.active {
+            background: linear-gradient(to bottom, rgba(253, 185, 39, 0.1), transparent);
+            border-bottom: 2px solid #FDB927;
+            color: #FDB927;
+            font-weight: 600;
+        }
+        .badge-premium {
+            background: linear-gradient(90deg, #FDB927 0%, #D4AF37 100%);
+            color: #1E293B;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+        }
+        .depth-market {
+            background: linear-gradient(to bottom, #1E293B, #0F172A);
+        }
+        .gold-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 78c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm52-25c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z' fill='%23d4af37' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans gold-pattern">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Premium Gold Header -->
+        <header class="mb-8 gold-gradient rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/10"></div>
+            <div class="relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <div class="flex items-center mb-2">
+                            <h1 class="text-3xl font-bold mr-3 text-gray-900">GOLD SCALPER PRO</h1>
+                            <span class="badge-premium px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">ELITE Edition</span>
+                        </div>
+                        <p class="text-gray-800 font-medium">World's Most Profitable XAU/USD Scalping System • 94.7% Win Rate • 9.8 Profit Factor</p>
+                    </div>
+                    <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                        <div class="bg-green-500/20 px-4 py-2 rounded-full flex items-center backdrop-blur-sm border border-white/20">
+                            <span class="w-3 h-3 bg-green-400 rounded-full mr-2 pulse-gold"></span>
+                            <span class="text-sm font-medium text-gray-900">Live Trading Active</span>
+                        </div>
+                        <button class="bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white px-6 py-3 rounded-lg flex items-center shadow-lg hover:shadow-xl transition-all">
+                            <i class="fas fa-crown mr-2"></i> Upgrade to Elite
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-1. **Strategy Overview**:
-- Uses a combination of EMA crosses (fast, medium, slow) with RSI and volume confirmation
-- Implements a "Quantum Wave" pattern detection for entries
-- Claims high win rate (89.7%) and profit factor (5.8)
+        <!-- Performance Banner -->
+        <div class="bg-white rounded-xl shadow-md mb-8 p-5 border-l-4 border-amber-500">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="bg-amber-100 p-3 rounded-lg mr-4">
+                        <i class="fas fa-coins text-amber-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900">Gold Session Performance</h3>
+                        <p class="text-sm text-gray-600">Real-time tracking of GOLD SCALPER PRO</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full md:w-auto">
+                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-green-600 font-medium">Today's Profit</p>
+                        <p class="text-xl font-bold text-green-700">+$3,742.50</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-amber-600 font-medium">Win Rate</p>
+                        <p class="text-xl font-bold text-amber-700">94.7%</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-blue-600 font-medium">Trades Today</p>
+                        <p class="text-xl font-bold text-blue-700">23</p>
+                    </div>
+                    <div class="bg-purple-50 p-3 rounded-lg text-center">
+                        <p class="text-xs text-purple-600 font-medium">Profit Factor</p>
+                        <p class="text-xl font-bold text-purple-700">9.8</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-2. **Key Features**:
-- Multiple time frame analysis (M5, M15, H1 weights)
-- Adaptive algorithm that adjusts to market conditions
-- Three risk modes (Conservative, Aggressive, Martingale)
-- Trading session filters (London/NY overlap, Asian session, or all hours)
-- News event detection (simulated in this code)
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Chart and Controls -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Gold Chart with Advanced Controls -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden gold-border">
+                    <div class="flex justify-between items-center bg-gray-50 px-6 py-4 border-b">
+                        <div class="tabs flex space-x-1">
+                            <button class="tab active px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="xauusd">
+                                <i class="fas fa-coins mr-1"></i> XAU/USD
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="xagusd">
+                                <i class="fas fa-coins mr-1"></i> XAG/USD
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="xauusd-m5">
+                                <i class="fas fa-clock mr-1"></i> M5 Chart
+                            </button>
+                            <button class="tab px-4 py-2 text-sm font-medium rounded-t-lg" data-tab="xauusd-m15">
+                                <i class="fas fa-clock mr-1"></i> M15 Chart
+                            </button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <select class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                <option>M1</option>
+                                <option>M5</option>
+                                <option selected>M15</option>
+                                <option>H1</option>
+                            </select>
+                            <button class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container p-4">
+                        <!-- Advanced Gold Chart Placeholder with Indicators -->
+                        <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+                            <div class="text-center">
+                                <i class="fas fa-chart-line text-6xl mb-4 opacity-20"></i>
+                                <p class="text-lg font-medium">GOLD SCALPER PRO Live Chart</p>
+                                <p class="text-sm mt-1">HMA(6) + KDJ + Volume Spike Detection</p>
+                            </div>
+                        </div>
+                        <!-- Simulated Price Line -->
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-500 animate-pulse"></div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-amber-500 rounded-full mr-2"></span>
+                                <span class="text-xs">HMA(6)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                <span class="text-xs">KDJ(14,3,3)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                <span class="text-xs">Volume Spike</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-medium">Bid: <span class="text-green-500">1942.85</span></span>
+                            <span class="text-xs font-medium mx-2">|</span>
+                            <span class="text-xs font-medium">Ask: <span class="text-red-500">1943.05</span></span>
+                        </div>
+                    </div>
+                </div>
 
-3. **Risk Management**:
-- Configurable stop loss and take profit levels
-- Daily risk limit (percentage of account)
-- Position sizing based on confidence score
-- Trailing stop functionality
+                <!-- Market Depth Visualization -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="bg-gray-800 text-white px-6 py-4">
+                        <h2 class="text-lg font-semibold flex items-center">
+                            <i class="fas fa-layer-group text-amber-400 mr-2"></i>
+                            Gold Market Depth
+                        </h2>
+                    </div>
+                    <div class="depth-market p-4 h-64 flex items-end">
+                        <!-- Buy Depth -->
+                        <div class="w-1/2 pr-1">
+                            <div class="flex flex-col-reverse h-48">
+                                <div class="bg-green-900/50 mb-1" style="height: 30%"></div>
+                                <div class="bg-green-800/60 mb-1" style="height: 25%"></div>
+                                <div class="bg-green-700/70 mb-1" style="height: 20%"></div>
+                                <div class="bg-green-600/80 mb-1" style="height: 15%"></div>
+                                <div class="bg-green-500 mb-1" style="height: 10%"></div>
+                            </div>
+                            <div class="text-center text-xs text-green-500 mt-1">Bids</div>
+                        </div>
+                        <!-- Sell Depth -->
+                        <div class="w-1/2 pl-1">
+                            <div class="flex flex-col h-48">
+                                <div class="bg-red-900/50 mb-1" style="height: 28%"></div>
+                                <div class="bg-red-800/60 mb-1" style="height: 23%"></div>
+                                <div class="bg-red-700/70 mb-1" style="height: 19%"></div>
+                                <div class="bg-red-600/80 mb-1" style="height: 17%"></div>
+                                <div class="bg-red-500 mb-1" style="height: 13%"></div>
+                            </div>
+                            <div class="text-center text-xs text-red-500 mt-1">Asks</div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 text-center border-t">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">Liquidity Zones: 1938.50 - 1946.75</span>
+                            <span class="text-xs font-medium text-amber-600">Spread: 0.20</span>
+                        </div>
+                    </div>
+                </div>
 
-4. **Technical Indicators Used**:
-- Exponential Moving Averages (3, 5, 8 periods)
-- RSI (14 period)
-- Tick volume
+                <!-- Gold Algorithm Settings -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            <i class="fas fa-atom text-amber-500 mr-2"></i>
+                            Gold Scalping Parameters
+                        </h2>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-3 py-1 rounded-full">Adaptive Mode</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-wave-square text-sm text-amber-500 mr-2"></i>
+                                Gold Wave Detection
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Impulse Sensitivity</label>
+                                    <input type="range" min="1" max="10" value="8" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Retracement Threshold</label>
+                                    <input type="number" value="41.8" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-chess-clock text-sm text-blue-500 mr-2"></i>
+                                Session Analysis
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Optimal Session</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                        <option>London Open</option>
+                                        <option selected>NY-London Overlap</option>
+                                        <option>Asian Session</option>
+                                        <option>All Market Hours</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Timeframe Weighting</label>
+                                    <div class="flex space-x-2">
+                                        <input type="number" placeholder="M5" value="40" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                        <input type="number" placeholder="M15" value="45" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                        <input type="number" placeholder="H1" value="15" class="w-1/3 px-2 py-1 border border-gray-300 rounded text-center">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-shield-alt text-sm text-green-500 mr-2"></i>
+                                Gold Risk Nexus
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Lot Sizing Mode</label>
+                                    <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                        <option>Conservative</option>
+                                        <option selected>Aggressive</option>
+                                        <option>Martingale</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Daily Risk (%)</label>
+                                    <input type="number" value="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-4 border-t">
+                        <div class="flex items-center">
+                            <input id="auto-optimize" type="checkbox" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
+                            <label for="auto-optimize" class="ml-2 text-sm font-medium text-gray-700">Auto-Optimize Gold Parameters</label>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-undo mr-1"></i> Reset
+                            </button>
+                            <button class="px-6 py-2 gold-gradient text-gray-900 font-bold rounded-md hover:opacity-90 transition-all shadow-md">
+                                <i class="fas fa-save mr-1"></i> Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-5. **Trade Execution**:
-- Implements partial closing (50% at first TP)
-- Multiple take profit levels
-- Comprehensive error handling
+            <!-- Right Column - Signals and Stats -->
+            <div class="space-y-6">
+                <!-- Gold Signals -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="gold-gradient px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-bolt text-gray-900 mr-2"></i>
+                            Gold Scalp Signals
+                            <span class="ml-auto bg-black/20 text-white px-2 py-1 rounded-full text-xs">LIVE</span>
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+                        <!-- High Probability Gold Signal -->
+                        <div class="signal-card buy-signal p-4 hover:bg-gray-50/50 cursor-pointer gold-glow">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">GOLD BUY</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">96% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">1942.85</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">1940.35</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">1945.35</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">1947.85</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-amber-600 text-white px-2 py-1 rounded mb-1">Liquidity Break</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> <span class="blink">Just Now</span>
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full">
+                                            Execute <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sell Signal with Multiple TPs -->
+                        <div class="signal-card sell-signal p-4 hover:bg-gray-50/50 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-red-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">GOLD SELL</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">88% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">1951.20</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">1953.70</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">1948.70</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">1946.20</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-purple-600 text-white px-2 py-1 rounded mb-1">EMA Rejection</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> 17 min ago
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full">
+                                            Closed +24.5 <i class="fas fa-check ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gold Scalp Signal -->
+                        <div class="signal-card buy-signal p-4 hover:bg-gray-50/50 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center mb-1">
+                                        <span class="bg-green-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">GOLD BUY</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">91% Confidence</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">1938.45</span></p>
+                                        <div class="flex space-x-4 mt-1">
+                                            <p class="text-xs font-medium">SL: <span class="text-red-500">1935.95</span></p>
+                                            <p class="text-xs font-medium">TP1: <span class="text-green-500">1940.95</span></p>
+                                            <p class="text-xs font-medium">TP2: <span class="text-green-700">1943.45</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs bg-blue-600 text-white px-2 py-1 rounded mb-1">Support Bounce</div>
+                                    <p class="text-xs text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i> 42 min ago
+                                    </p>
+                                    <div class="mt-2 flex justify-end">
+                                        <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-full">
+                                            Closed +18.0 <i class="fas fa-check ml-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 text-center border-t">
+                        <button class="text-sm text-amber-600 hover:text-amber-800 font-medium flex items-center justify-center w-full">
+                            <i class="fas fa-history mr-2"></i> View Gold Signal History
+                        </button>
+                    </div>
+                </div>
 
-6. **Alert Systems**:
-- Popup alerts
-- Email notifications
-- Push notifications (though implementation would require external service)
+                <!-- Performance Dashboard -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-amber-500 mr-2"></i>
+                        Gold Performance
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Monthly Gold Profit Target</span>
+                            <span class="text-sm font-bold text-green-600">$9,215/$12,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="profit-indicator h-2.5 rounded-full" style="width: 77%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-amber-50 p-3 rounded-lg">
+                            <p class="text-xs text-amber-600 font-medium">Win Rate</p>
+                            <p class="text-2xl font-bold text-amber-700">94.7%</p>
+                            <p class="text-xs text-gray-500 mt-1">Last 100 trades</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-xs text-green-600 font-medium">Profit Factor</p>
+                            <p class="text-2xl font-bold text-green-700">9.8</p>
+                            <p class="text-xs text-gray-500 mt-1">Industry best</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-xs text-blue-600 font-medium">Avg Win</p>
+                            <p class="text-2xl font-bold text-blue-700">$185.70</p>
+                            <p class="text-xs text-gray-500 mt-1">Per trade</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg">
+                            <p class="text-xs text-purple-600 font-medium">Avg Loss</p>
+                            <p class="text-2xl font-bold text-purple-700">$52.40</p>
+                            <p class="text-xs text-gray-500 mt-1">Risk control</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-xs font-medium text-gray-600">Account Growth</p>
+                            <p class="text-sm font-bold text-green-600">+63.5%</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="profit-indicator h-2 rounded-full" style="width: 63%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">30-day performance</p>
+                    </div>
+                </div>
 
-Potential Concerns:
-1. The Martingale risk mode could be dangerous as it doubles down on losses
-2. The claimed performance metrics (89.7% win rate) seem exceptionally high and should be verified
-3. The news detection is simulated - a real implementation would need API integration
-4. No actual backtest results or optimization parameters are provided
+                <!-- Gold Execution -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-bolt text-amber-500 mr-2"></i>
+                        Gold Execution
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-play-circle text-xl mb-1"></i>
+                            Start Bot
+                        </button>
+                        <button class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-stop-circle text-xl mb-1"></i>
+                            Emergency Stop
+                        </button>
+                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-sync-alt text-xl mb-1"></i>
+                            Force Close All
+                        </button>
+                        <button class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-robot text-xl mb-1"></i>
+                            Auto Recovery
+                        </button>
+                    </div>
+                    <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-yellow-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <span class="font-medium">Warning:</span> FOMC in 2 hours. Reduced risk mode activated.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-This appears to be a complete trading system, though as with any EA, it should be thoroughly tested in a demo environment before live trading. The code is well-structured with clear separation of concerns between signal generation, risk management, and trade execution.
+        <!-- Advanced Gold Analytics -->
+        <div class="mt-8 bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b">
+                <h2 class="text-lg font-semibold flex items-center">
+                    <i class="fas fa-chart-bar text-amber-500 mr-2"></i>
+                    Gold Scalping Analytics
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-amber-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-amber-600 uppercase tracking-wide">Best Session</p>
+                                <p class="text-xl font-bold text-amber-800 mt-1">08:00-11:00 GMT</p>
+                                <p class="text-sm text-amber-600">+$3,142.50</p>
+                            </div>
+                            <div class="bg-amber-100 p-2 rounded-full">
+                                <i class="fas fa-clock text-amber-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Win Rate</span>
+                                <span>94.1%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-amber-600 h-1.5 rounded-full" style="width: 94%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-blue-600 uppercase tracking-wide">Optimal Lot</p>
+                                <p class="text-xl font-bold text-blue-800 mt-1">0.3 - 0.8</p>
+                                <p class="text-sm text-blue-600">Max efficiency range</p>
+                            </div>
+                            <div class="bg-blue-100 p-2 rounded-full">
+                                <i class="fas fa-balance-scale text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Risk/Reward</span>
+                                <span>1:4.2</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-blue-600 h-1.5 rounded-full" style="width: 84%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-green-600 uppercase tracking-wide">Best Strategy</p>
+                                <p class="text-xl font-bold text-green-800 mt-1">Liquidity Break</p>
+                                <p class="text-sm text-green-600">89.7% success</p>
+                            </div>
+                            <div class="bg-green-100 p-2 rounded-full">
+                                <i class="fas fa-trophy text-green-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Avg Profit</span>
+                                <span>$187.50</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-green-600 h-1.5 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeframe</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trades</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Profit</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P/L</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">M5 Scalping</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">87</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 89%"></div>
+                                        </div>
+                                        <span>89%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$142.50</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$12,397.50</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">M15 Scalping</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">64</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 93%"></div>
+                                        </div>
+                                        <span>93%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$178.20</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$11,404.80</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">H1 Swing</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">28</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: 82%"></div>
+                                        </div>
+                                        <span>82%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">+$225.50</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">+$6,314.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-Would you like me to explain any specific part of this EA in more detail?
+        <!-- VIP Upgrade Banner -->
+        <div class="mt-8 bg-gradient-to-r from-gray-900 to-amber-900 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-8 text-center">
+                <h2 class="text-2xl font-bold text-white mb-2">Unlock GOLD SCALPER PRO VIP</h2>
+                <p class="text-amber-200 mb-6 max-w-2xl mx-auto">Get exclusive access to our premium gold signals, advanced risk management modules, and 24/7 priority support.</p>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-amber-300/20">
+                        <p class="text-white font-medium">Monthly</p>
+                        <p class="text-3xl font-bold text-amber-300">$497<span class="text-sm font-normal">/month</span></p>
+                    </div>
+                    <div class="bg-gradient-to-r from-amber-400 to-amber-600 p-4 rounded-lg shadow-lg transform scale-105">
+                        <p class="text-gray-900 font-medium">Lifetime Access</p>
+                        <p class="text-3xl font-bold text-gray-900">$1,997<span class="text-sm font-normal">/one-time</span></p>
+                        <span class="text-xs bg-gray-900 text-amber-400 px-2 py-0.5 rounded-full mt-1 inline-block">BEST VALUE</span>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-amber-300/20">
+                        <p class="text-white font-medium">Yearly</p>
+                        <p class="text-3xl font-bold text-amber-300">$4,497<span class="text-sm font-normal">/year</span></p>
+                    </div>
+                </div>
+                <button class="mt-8 bg-gradient-to-r from-gray-900 to-black hover:from-gray-800 hover:to-gray-900 text-amber-400 font-bold py-3 px-8 rounded-full shadow-xl transform hover:scale-105 transition-all duration-300">
+                    <i class="fas fa-crown mr-2"></i> Upgrade to VIP Now
+                </button>
+                <p class="mt-4 text-sm text-amber-200">30-day money back guarantee • Join 850+ elite gold traders</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-8 pb-12 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <div class="gold-gradient text-gray-900 p-2 rounded-lg mr-3">
+                            <i class="fas fa-coins text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">GOLD SCALPER PRO</h3>
+                            <p class="text-sm text-gray-600">VIP Edition v4.1.2</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Product</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Features</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Pricing</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Support</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Help Center</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Community</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Legal</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Privacy</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Terms</a></li>
+                            <li><a href="#" class="text-sm text-gray-600 hover:text-amber-600">Risk Disclosure</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-12 text-center text-sm text-gray-500">
+                <p>© 2023 Gold Trading Technologies. All rights reserved.</p>
+                <p class="mt-1">Trading gold and precious metals carries a high level of risk and may not be suitable for all investors.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                console.log('Switched to:', this.dataset.tab);
+            });
+        });
+
+        // Simulate live gold price updates
+        function updateGoldPrices() {
+            const pairs = {
+                xauusd: { bid: 1940.50 + Math.random() * 5, ask: 0.2 },
+                xagusd: { bid: 22.80 + Math.random() * 0.3, ask: 0.03 },
+                'xauusd-m5': { bid: 1940.50 + Math.random() * 2, ask: 0.2 },
+                'xauusd-m15': { bid: 1940.50 + Math.random() * 3, ask: 0.2 }
+            };
+            
+            const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'xauusd';
+            const currentPair = pairs[activeTab];
+            
+            document.querySelectorAll('.text-right .text-xs.font-medium').forEach(el => {
+                if (el.textContent.includes('Bid:')) {
+                    el.innerHTML = `Bid: <span class="text-green-500">${currentPair.bid.toFixed(2)}</span>`;
+                }
+                if (el.textContent.includes('Ask:')) {
+                    el.innerHTML = `Ask: <span class="text-red-500">${(currentPair.bid + currentPair.ask).toFixed(2)}</span>`;
+                }
+            });
+        }
+        setInterval(updateGoldPrices, 1000);
+
+        // Simulate new gold signal notification
+        setInterval(() => {
+            const signals = [
+                {
+                    type: "BUY",
+                    entry: (1940.50 + Math.random() * 3).toFixed(2),
+                    confidence: Math.floor(85 + Math.random() * 15),
+                    strategy: ["Liquidity Break", "Support Bounce", "EMA Breakout"][Math.floor(Math.random() * 3)]
+                },
+                {
+                    type: "SELL",
+                    entry: (1940.50 + Math.random() * 4).toFixed(2),
+                    confidence: Math.floor(80 + Math.random() * 15),
+                    strategy: ["Resistance Rejection", "Trend Exhaustion", "Fibonacci Pin"][Math.floor(Math.random() * 3)]
+                }
+            ];
+            
+            const randomSignal = signals[Math.floor(Math.random() * signals.length)];
+            const signalsContainer = document.querySelector('.divide-y');
+            
+            const newSignal = document.createElement('div');
+            newSignal.className = `signal-card ${randomSignal.type === 'BUY' ? 'buy-signal' : 'sell-signal'} p-4 hover:bg-gray-50/50 cursor-pointer gold-glow`;
+            newSignal.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center mb-1">
+                            <span class="${randomSignal.type === 'BUY' ? 'bg-green-500' : 'bg-red-500'} text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">GOLD ${randomSignal.type}</span>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">${randomSignal.confidence}% Confidence</span>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">${randomSignal.entry}</span></p>
+                            <div class="flex space-x-4 mt-1">
+                                <p class="text-xs font-medium">SL: <span class="text-red-500">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) - 2.5).toFixed(2) : (parseFloat(randomSignal.entry) + 2.5).toFixed(2))}</span></p>
+                                <p class="text-xs font-medium">TP1: <span class="text-green-500">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) + 2.5).toFixed(2) : (parseFloat(randomSignal.entry) - 2.5).toFixed(2))}</span></p>
+                                <p class="text-xs font-medium">TP2: <span class="text-green-700">${(randomSignal.type === 'BUY' ? (parseFloat(randomSignal.entry) + 5.0).toFixed(2) : (parseFloat(randomSignal.entry) - 5.0).toFixed(2))}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs ${randomSignal.strategy === 'Liquidity Break' ? 'bg-amber-600' : randomSignal.strategy === 'Support Bounce' ? 'bg-blue-600' : 'bg-purple-600'} text-white px-2 py-1 rounded mb-1">${randomSignal.strategy}</div>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i> <span class="blink">Just Now</span>
+                        </p>
+                        <div class="mt-2 flex justify-end">
+                            <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full">
+                                Execute <i class="fas fa-play ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            signalsContainer.prepend(newSignal);
+            
+            // Flash notification
+            document.title = "⚡ New Gold Signal - GOLD SCALPER PRO";
+            setTimeout(() => {
+                document.title = "GOLD SCALPER PRO - World's #1 XAU/USD Scalping Bot";
+            }, 2000);
+            
+            // Add notification sound in a real implementation
+            console.log('New gold signal notification:', randomSignal);
+        }, 20000); // Every 20 seconds for demo
+
+        // Make the first signal glow
+        setInterval(() => {
+            const firstSignal = document.querySelector('.divide-y .signal-card');
+            if (firstSignal) {
+                firstSignal.classList.toggle('gold-glow');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
