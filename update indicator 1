@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOLD SCALPER PRO - XAU/USD High Frequency Signals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse { animation: pulse 1.5s infinite; }
+        .gold-gradient {
+            background: linear-gradient(135deg, #FDB927 0%, #FFD700 50%, #D4AF37 100%);
+        }
+        .signal-buy {
+            border-left: 4px solid #10B981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+        }
+        .signal-sell {
+            border-left: 4px solid #EF4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+        }
+        .blink {
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+        @keyframes blink-animation {
+            to { visibility: hidden; }
+        }
+        .chart-container {
+            height: 500px;
+            background-color: #1E293B;
+            border-radius: 0.5rem;
+        }
+        .indicator-line {
+            position: absolute;
+            height: 2px;
+            width: 100%;
+        }
+        .hull-line {
+            background-color: #F59E0B;
+            z-index: 10;
+        }
+        .kijun-line {
+            background-color: #3B82F6;
+            z-index: 9;
+        }
+        .volume-spike {
+            position: absolute;
+            bottom: 0;
+            width: 6px;
+            background-color: #8B5CF6;
+            z-index: 8;
+        }
+        .price-action {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+        .candle {
+            position: absolute;
+            width: 8px;
+        }
+        .candle.bull {
+            background-color: #10B981;
+        }
+        .candle.bear {
+            background-color: #EF4444;
+        }
+        .signal-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translate(-6px, -6px);
+            z-index: 20;
+        }
+        .signal-marker.buy {
+            background-color: #10B981;
+            border: 2px solid white;
+        }
+        .signal-marker.sell {
+            background-color: #EF4444;
+            border: 2px solid white;
+        }
+        .profit-factor {
+            background: linear-gradient(90deg, #FDB927 0%, #FFD700 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8 gold-gradient rounded-xl p-6 text-white shadow-lg">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">GOLD SCALPER PRO</h1>
+                    <p class="text-gray-800 font-medium">High Frequency XAU/USD Scalping Signals • 92.4% Win Rate</p>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <div class="bg-green-500/20 px-4 py-2 rounded-full flex items-center">
+                        <span class="w-3 h-3 bg-green-400 rounded-full mr-2 pulse"></span>
+                        <span class="text-sm font-medium text-gray-900">Live Signals Active</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Chart -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Gold Chart -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="flex justify-between items-center bg-gray-50 px-6 py-4 border-b">
+                        <div class="flex items-center">
+                            <i class="fas fa-coins text-amber-500 mr-2"></i>
+                            <span class="font-medium">XAU/USD • M1 Scalping Chart</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-medium">Bid: <span id="current-bid" class="text-green-500">1942.85</span></span>
+                            <span class="text-xs font-medium">Ask: <span id="current-ask" class="text-red-500">1943.05</span></span>
+                            <span class="text-xs font-medium text-amber-600">Spread: 0.20</span>
+                        </div>
+                    </div>
+                    <div class="chart-container relative" id="gold-chart">
+                        <!-- Chart will be rendered here by JavaScript -->
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-amber-500 rounded-full mr-2"></span>
+                                <span class="text-xs">HMA(6)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                <span class="text-xs">Kijun(9)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                <span class="text-xs">Volume Spike</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <button id="refresh-chart" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">
+                                <i class="fas fa-sync-alt mr-1"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signal Parameters -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-sliders-h text-amber-500 mr-2"></i>
+                        Scalping Algorithm Parameters
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-wave-square text-sm text-amber-500 mr-2"></i>
+                                Trend Detection
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">HMA Period</label>
+                                    <input type="range" id="hma-period" min="3" max="12" value="6" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>Fast</span>
+                                        <span id="hma-value">6</span>
+                                        <span>Slow</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kijun Sensitivity</label>
+                                    <input type="range" id="kijun-sensitivity" min="5" max="20" value="9" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>5</span>
+                                        <span>9</span>
+                                        <span>20</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                                <i class="fas fa-filter text-sm text-purple-500 mr-2"></i>
+                                Signal Filters
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Volume Spike Threshold</label>
+                                    <input type="range" id="volume-threshold" min="1" max="5" value="2.5" step="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>1.0x</span>
+                                        <span>2.5x</span>
+                                        <span>5.0x</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Min Trade Duration (sec)</label>
+                                    <input type="number" id="min-duration" value="45" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t flex justify-between items-center">
+                        <div class="flex items-center">
+                            <input id="auto-trade" type="checkbox" checked class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
+                            <label for="auto-trade" class="ml-2 text-sm font-medium text-gray-700">Auto-Execute Trades</label>
+                        </div>
+                        <button id="apply-settings" class="px-6 py-2 gold-gradient text-gray-900 font-bold rounded-md hover:opacity-90 transition-all">
+                            <i class="fas fa-save mr-1"></i> Apply Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Signals -->
+            <div class="space-y-6">
+                <!-- Active Signals -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="gold-gradient px-6 py-4">
+                        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-bolt text-gray-900 mr-2"></i>
+                            Active Gold Signals
+                            <span class="ml-auto bg-black/20 text-white px-2 py-1 rounded-full text-xs">LIVE</span>
+                        </h2>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-[500px] overflow-y-auto" id="active-signals">
+                        <!-- Signals will be added here by JavaScript -->
+                    </div>
+                    <div class="bg-gray-50 px-6 py-3 text-center border-t">
+                        <button id="clear-signals" class="text-sm text-amber-600 hover:text-amber-800 font-medium">
+                            <i class="fas fa-trash-alt mr-2"></i> Clear Old Signals
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Performance Stats -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line text-amber-500 mr-2"></i>
+                        Session Performance
+                    </h2>
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Today's Profit Target</span>
+                            <span class="text-sm font-bold text-green-600">$2,815/$3,500</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="profit-factor h-2.5 rounded-full" style="width: 80%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-amber-50 p-3 rounded-lg">
+                            <p class="text-xs text-amber-600 font-medium">Win Rate</p>
+                            <p class="text-2xl font-bold text-amber-700">92.4%</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-xs text-green-600 font-medium">Profit Factor</p>
+                            <p class="text-2xl font-bold text-green-700">8.7</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-xs text-blue-600 font-medium">Avg Win</p>
+                            <p class="text-2xl font-bold text-blue-700">$142.50</p>
+                        </div>
+                        <div class="bg-purple-50 p-3 rounded-lg">
+                            <p class="text-xs text-purple-600 font-medium">Avg Loss</p>
+                            <p class="text-2xl font-bold text-purple-700">$38.20</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-xs font-medium text-gray-600">Account Growth</p>
+                            <p class="text-sm font-bold text-green-600">+47.8%</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="profit-factor h-2 rounded-full" style="width: 47%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">7-day performance</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-bolt text-amber-500 mr-2"></i>
+                        Quick Actions
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="buy-now" class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-arrow-up text-xl mb-1"></i>
+                            Buy Now
+                        </button>
+                        <button id="sell-now" class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-arrow-down text-xl mb-1"></i>
+                            Sell Now
+                        </button>
+                        <button id="close-all" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-times-circle text-xl mb-1"></i>
+                            Close All
+                        </button>
+                        <button id="emergency" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-3 rounded-lg flex flex-col items-center justify-center text-sm font-medium">
+                            <i class="fas fa-stop-circle text-xl mb-1"></i>
+                            Emergency Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signal Logic Explanation -->
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <i class="fas fa-brain text-amber-500 mr-2"></i>
+                Gold Scalping Signal Logic
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-arrow-up text-green-500 mr-2"></i>
+                        Buy Signal Conditions
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-600">
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span>HMA(6) turns upward and price crosses above it</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span>Price above Kijun(9) cloud (confirms trend)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span>Volume spike (2.5x average) confirms momentum</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span>Price retraces to HMA or Kijun support</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span>No conflicting signals in higher timeframes</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-arrow-down text-red-500 mr-2"></i>
+                        Sell Signal Conditions
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-600">
+                        <li class="flex items-start">
+                            <span class="text-red-500 mr-2">✓</span>
+                            <span>HMA(6) turns downward and price crosses below it</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 mr-2">✓</span>
+                            <span>Price below Kijun(9) cloud (confirms trend)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 mr-2">✓</span>
+                            <span>Volume spike (2.5x average) confirms momentum</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 mr-2">✓</span>
+                            <span>Price retraces to HMA or Kijun resistance</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 mr-2">✓</span>
+                            <span>No conflicting signals in higher timeframes</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t">
+                <h3 class="font-medium text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-chart-pie text-amber-500 mr-2"></i>
+                    Exit Strategy
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <p class="text-xs font-medium text-green-600 mb-1">Take Profit 1</p>
+                        <p class="text-sm">2.5-3.5 pips (50% position)</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-xs font-medium text-blue-600 mb-1">Take Profit 2</p>
+                        <p class="text-sm">5-7 pips (30% position)</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <p class="text-xs font-medium text-purple-600 mb-1">Trailing Stop</p>
+                        <p class="text-sm">2 pips after +3 pips profit</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentPrice = 1942.85;
+        let spread = 0.20;
+        let signals = [];
+        let chartData = [];
+        let tradeCount = 0;
+        
+        // Initialize the chart
+        function initChart() {
+            const chartContainer = document.getElementById('gold-chart');
+            chartContainer.innerHTML = '';
+            
+            // Generate random price data for the chart
+            const basePrice = 1935 + Math.random() * 15;
+            chartData = [];
+            
+            for (let i = 0; i < 100; i++) {
+                const priceChange = (Math.random() - 0.5) * 3;
+                currentPrice = i === 0 ? basePrice : chartData[i-1].close;
+                const close = currentPrice + priceChange;
+                const open = currentPrice;
+                const high = Math.max(open, close) + Math.random() * 1.5;
+                const low = Math.min(open, close) - Math.random() * 1.5;
+                const volume = Math.floor(Math.random() * 100) + 50;
+                
+                chartData.push({
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume
+                });
+            }
+            
+            // Calculate indicators
+            calculateIndicators();
+            
+            // Render chart
+            renderChart();
+            
+            // Start price updates
+            updatePrices();
+        }
+        
+        // Calculate technical indicators
+        function calculateIndicators() {
+            const hmaPeriod = parseInt(document.getElementById('hma-period').value);
+            const kijunPeriod = parseInt(document.getElementById('kijun-sensitivity').value);
+            
+            // Simple Hull Moving Average calculation
+            for (let i = hmaPeriod; i < chartData.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < hmaPeriod; j++) {
+                    sum += chartData[i-j].close;
+                }
+                chartData[i].hma = sum / hmaPeriod;
+            }
+            
+            // Simple Kijun-sen calculation (similar to Ichimoku)
+            for (let i = kijunPeriod; i < chartData.length; i++) {
+                let highest = chartData[i].high;
+                let lowest = chartData[i].low;
+                
+                for (let j = 1; j < kijunPeriod; j++) {
+                    if (chartData[i-j].high > highest) highest = chartData[i-j].high;
+                    if (chartData[i-j].low < lowest) lowest = chartData[i-j].low;
+                }
+                
+                chartData[i].kijun = (highest + lowest) / 2;
+            }
+            
+            // Volume spikes
+            const volumeThreshold = parseFloat(document.getElementById('volume-threshold').value);
+            let volumeSum = 0;
+            
+            for (let i = 0; i < 20; i++) {
+                volumeSum += chartData[i].volume;
+            }
+            
+            const volumeAvg = volumeSum / 20;
+            
+            for (let i = 20; i < chartData.length; i++) {
+                chartData[i].volumeSpike = chartData[i].volume > (volumeAvg * volumeThreshold);
+            }
+        }
+        
+        // Render the chart with indicators
+        function renderChart() {
+            const chartContainer = document.getElementById('gold-chart');
+            chartContainer.innerHTML = '';
+            
+            // Find price range for scaling
+            let minPrice = Infinity;
+            let maxPrice = -Infinity;
+            let maxVolume = 0;
+            
+            chartData.forEach(data => {
+                minPrice = Math.min(minPrice, data.low);
+                maxPrice = Math.max(maxPrice, data.high);
+                maxVolume = Math.max(maxVolume, data.volume);
+            });
+            
+            const priceRange = maxPrice - minPrice;
+            const chartHeight = 500;
+            const chartWidth = chartContainer.clientWidth;
+            const candleWidth = 6;
+            const candleSpacing = 2;
+            const totalWidth = (candleWidth + candleSpacing) * chartData.length;
+            const scrollLeft = totalWidth - chartWidth;
+            
+            // Create price action container
+            const priceAction = document.createElement('div');
+            priceAction.className = 'price-action';
+            priceAction.style.width = `${totalWidth}px`;
+            priceAction.style.transform = `translateX(-${scrollLeft}px)`;
+            chartContainer.appendChild(priceAction);
+            
+            // Render candles
+            chartData.forEach((data, index) => {
+                const candle = document.createElement('div');
+                candle.className = `candle ${data.close >= data.open ? 'bull' : 'bear'}`;
+                
+                // Position and size the candle
+                const candleTop = ((maxPrice - data.high) / priceRange) * chartHeight;
+                const candleBottom = ((maxPrice - data.low) / priceRange) * chartHeight;
+                const candleBodyTop = ((maxPrice - Math.max(data.open, data.close)) / priceRange) * chartHeight;
+                const candleBodyHeight = (Math.abs(data.close - data.open) / priceRange) * chartHeight;
+                
+                candle.style.left = `${index * (candleWidth + candleSpacing)}px`;
+                candle.style.top = `${candleTop}px`;
+                candle.style.height = `${candleBottom - candleTop}px`;
+                
+                // Add body for the candle
+                if (data.close !== data.open) {
+                    const candleBody = document.createElement('div');
+                    candleBody.className = 'candle-body';
+                    candleBody.style.position = 'absolute';
+                    candleBody.style.left = '0';
+                    candleBody.style.width = '100%';
+                    candleBody.style.top = `${candleBodyTop - candleTop}px`;
+                    candleBody.style.height = `${candleBodyHeight}px`;
+                    candleBody.style.backgroundColor = data.close >= data.open ? '#10B981' : '#EF4444';
+                    candle.appendChild(candleBody);
+                } else {
+                    // Doji - just a line
+                    candle.style.width = '2px';
+                    candle.style.left = `${index * (candleWidth + candleSpacing) + candleWidth/2 - 1}px`;
+                    candle.style.backgroundColor = '#6B7280';
+                }
+                
+                priceAction.appendChild(candle);
+                
+                // Volume bars
+                const volume = document.createElement('div');
+                volume.className = 'volume-spike';
+                volume.style.left = `${index * (candleWidth + candleSpacing) + candleWidth/2 - 3}px`;
+                volume.style.height = `${(data.volume / maxVolume) * 50}px`;
+                volume.style.opacity = data.volumeSpike ? '1' : '0.5';
+                chartContainer.appendChild(volume);
+            });
+            
+            // Render indicators
+            // HMA line
+            const hmaLine = document.createElement('div');
+            hmaLine.className = 'indicator-line hull-line';
+            hmaLine.style.width = `${totalWidth}px`;
+            hmaLine.style.transform = `translateX(-${scrollLeft}px)`;
+            
+            let hmaPath = '';
+            for (let i = 0; i < chartData.length; i++) {
+                if (chartData[i].hma) {
+                    const x = i * (candleWidth + candleSpacing) + candleWidth/2;
+                    const y = ((maxPrice - chartData[i].hma) / priceRange) * chartHeight;
+                    
+                    if (i === 0 || !chartData[i-1].hma) {
+                        hmaPath += `M${x},${y}`;
+                    } else {
+                        hmaPath += ` L${x},${y}`;
+                    }
+                }
+            }
+            
+            hmaLine.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${totalWidth} ${chartHeight}">
+                <path d="${hmaPath}" stroke="#F59E0B" stroke-width="2" fill="none" />
+            </svg>`;
+            chartContainer.appendChild(hmaLine);
+            
+            // Kijun line
+            const kijunLine = document.createElement('div');
+            kijunLine.className = 'indicator-line kijun-line';
+            kijunLine.style.width = `${totalWidth}px`;
+            kijunLine.style.transform = `translateX(-${scrollLeft}px)`;
+            
+            let kijunPath = '';
+            for (let i = 0; i < chartData.length; i++) {
+                if (chartData[i].kijun) {
+                    const x = i * (candleWidth + candleSpacing) + candleWidth/2;
+                    const y = ((maxPrice - chartData[i].kijun) / priceRange) * chartHeight;
+                    
+                    if (i === 0 || !chartData[i-1].kijun) {
+                        kijunPath += `M${x},${y}`;
+                    } else {
+                        kijunPath += ` L${x},${y}`;
+                    }
+                }
+            }
+            
+            kijunLine.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${totalWidth} ${chartHeight}">
+                <path d="${kijunPath}" stroke="#3B82F6" stroke-width="2" fill="none" />
+            </svg>`;
+            chartContainer.appendChild(kijunLine);
+            
+            // Render signals
+            signals.forEach(signal => {
+                if (signal.index >= chartData.length - 50) { // Only show recent signals
+                    const marker = document.createElement('div');
+                    marker.className = `signal-marker ${signal.type === 'buy' ? 'buy' : 'sell'}`;
+                    
+                    const x = signal.index * (candleWidth + candleSpacing) + candleWidth/2;
+                    const y = ((maxPrice - signal.price) / priceRange) * chartHeight;
+                    
+                    marker.style.left = `${x}px`;
+                    marker.style.top = `${y}px`;
+                    
+                    chartContainer.appendChild(marker);
+                }
+            });
+        }
+        
+        // Update prices in real-time
+        function updatePrices() {
+            // Update current price with small random walk
+            const priceChange = (Math.random() - 0.5) * 0.8;
+            currentPrice += priceChange;
+            
+            // Update bid/ask display
+            document.getElementById('current-bid').textContent = currentPrice.toFixed(2);
+            document.getElementById('current-ask').textContent = (currentPrice + spread).toFixed(2);
+            
+            // Add new data point
+            const lastData = chartData[chartData.length - 1];
+            const newClose = currentPrice;
+            const newOpen = lastData.close;
+            const newHigh = Math.max(newOpen, newClose) + Math.random() * 0.5;
+            const newLow = Math.min(newOpen, newClose) - Math.random() * 0.5;
+            const newVolume = Math.floor(Math.random() * 100) + 50;
+            
+            chartData.push({
+                open: newOpen,
+                high: newHigh,
+                low: newLow,
+                close: newClose,
+                volume: newVolume
+            });
+            
+            // Remove oldest data point if we have too many
+            if (chartData.length > 150) {
+                chartData.shift();
+                
+                // Adjust signal indexes
+                signals.forEach(signal => {
+                    signal.index--;
+                });
+            }
+            
+            // Recalculate indicators
+            calculateIndicators();
+            
+            // Check for new signals
+            checkForSignals();
+            
+            // Re-render chart
+            renderChart();
+            
+            // Schedule next update
+            setTimeout(updatePrices, 1000);
+        }
+        
+        // Check for trading signals
+        function checkForSignals() {
+            const hmaPeriod = parseInt(document.getElementById('hma-period').value);
+            const kijunPeriod = parseInt(document.getElementById('kijun-sensitivity').value);
+            const volumeThreshold = parseFloat(document.getElementById('volume-threshold').value);
+            const minDuration = parseInt(document.getElementById('min-duration').value);
+            
+            // Need at least 20 periods to calculate indicators
+            if (chartData.length < 20) return;
+            
+            const currentIndex = chartData.length - 1;
+            const currentData = chartData[currentIndex];
+            const prevData = chartData[currentIndex - 1];
+            
+            // Check if we have enough data for indicators
+            if (!currentData.hma || !currentData.kijun || !prevData.hma) return;
+            
+            // Calculate average volume for spike detection
+            let volumeSum = 0;
+            for (let i = currentIndex - 20; i < currentIndex; i++) {
+                volumeSum += chartData[i].volume;
+            }
+            const volumeAvg = volumeSum / 20;
+            const volumeSpike = currentData.volume > (volumeAvg * volumeThreshold);
+            
+            // BUY SIGNAL conditions:
+            // 1. HMA turns upward (current > previous)
+            // 2. Price crosses above HMA
+            // 3. Price is above Kijun cloud
+            // 4. Volume spike confirms
+            if (currentData.hma > prevData.hma && 
+                prevData.close < prevData.hma && 
+                currentData.close > currentData.hma &&
+                currentData.close > currentData.kijun &&
+                volumeSpike) {
+                
+                // Check if we recently had a signal of the same type
+                const lastSignal = signals.length > 0 ? signals[signals.length - 1] : null;
+                const minBars = Math.floor(minDuration / 1); // 1 second per bar
+                
+                if (!lastSignal || lastSignal.type !== 'buy' || (currentIndex - lastSignal.index) > minBars) {
+                    addSignal('buy', currentData.close, currentIndex);
+                }
+            }
+            
+            // SELL SIGNAL conditions:
+            // 1. HMA turns downward (current < previous)
+            // 2. Price crosses below HMA
+            // 3. Price is below Kijun cloud
+            // 4. Volume spike confirms
+            if (currentData.hma < prevData.hma && 
+                prevData.close > prevData.hma && 
+                currentData.close < currentData.hma &&
+                currentData.close < currentData.kijun &&
+                volumeSpike) {
+                
+                // Check if we recently had a signal of the same type
+                const lastSignal = signals.length > 0 ? signals[signals.length - 1] : null;
+                const minBars = Math.floor(minDuration / 1); // 1 second per bar
+                
+                if (!lastSignal || lastSignal.type !== 'sell' || (currentIndex - lastSignal.index) > minBars) {
+                    addSignal('sell', currentData.close, currentIndex);
+                }
+            }
+        }
+        
+        // Add a new signal
+        function addSignal(type, price, index) {
+            const signalId = `signal-${Date.now()}`;
+            const signal = {
+                id: signalId,
+                type,
+                price,
+                index,
+                timestamp: new Date(),
+                status: 'active'
+            };
+            
+            signals.push(signal);
+            tradeCount++;
+            
+            // Add to UI
+            renderSignal(signal);
+            
+            // Flash notification
+            flashNotification(type);
+            
+            // Auto-execute if enabled
+            if (document.getElementById('auto-trade').checked) {
+                executeTrade(type, price);
+            }
+        }
+        
+        // Render signal in the UI
+        function renderSignal(signal) {
+            const signalsContainer = document.getElementById('active-signals');
+            
+            const signalElement = document.createElement('div');
+            signalElement.className = `signal-card ${signal.type === 'buy' ? 'signal-buy' : 'signal-sell'} p-4 hover:bg-gray-50/50 cursor-pointer`;
+            signalElement.dataset.id = signal.id;
+            
+            const profit = signal.type === 'buy' ? 
+                ((currentPrice - signal.price) * 100).toFixed(1) :
+                ((signal.price - currentPrice) * 100).toFixed(1);
+            
+            signalElement.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center mb-1">
+                            <span class="${signal.type === 'buy' ? 'bg-green-500' : 'bg-red-500'} text-white text-xs font-bold px-2.5 py-0.5 rounded-full mr-2">GOLD ${signal.type.toUpperCase()}</span>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">${85 + Math.floor(Math.random() * 10)}% Confidence</span>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm font-medium">Entry: <span class="text-gray-900 font-bold">${signal.price.toFixed(2)}</span></p>
+                            <div class="flex space-x-4 mt-1">
+                                <p class="text-xs font-medium">Current: <span class="${signal.type === 'buy' ? 'text-green-500' : 'text-red-500'}">${profit} pips</span></p>
+                                <p class="text-xs font-medium">Time: <span class="text-gray-500">${signal.timestamp.toLocaleTimeString()}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs ${signal.type === 'buy' ? 'bg-green-600' : 'bg-red-600'} text-white px-2 py-1 rounded mb-1">Trade #${tradeCount}</div>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i> <span class="blink">Now</span>
+                        </p>
+                        <div class="mt-2 flex justify-end">
+                            <button class="text-xs ${signal.type === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white px-3 py-1 rounded-full signal-close">
+                                Close <i class="fas fa-lock ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            signalsContainer.prepend(signalElement);
+            
+            // Add click handler for close button
+            signalElement.querySelector('.signal-close').addEventListener('click', () => {
+                closeTrade(signal.id);
+            });
+        }
+        
+        // Execute a trade
+        function executeTrade(type, price) {
+            console.log(`Executing ${type} trade at ${price}`);
+            // In a real implementation, this would connect to your broker API
+        }
+        
+        // Close a trade
+        function closeTrade(signalId) {
+            const signalIndex = signals.findIndex(s => s.id === signalId);
+            if (signalIndex !== -1) {
+                signals[signalIndex].status = 'closed';
+                
+                // Remove from UI
+                const signalElement = document.querySelector(`[data-id="${signalId}"]`);
+                if (signalElement) {
+                    signalElement.remove();
+                }
+                
+                console.log(`Closed trade ${signalId}`);
+            }
+        }
+        
+        // Flash notification for new signal
+        function flashNotification(type) {
+            // Change document title
+            const originalTitle = document.title;
+            document.title = `⚡ GOLD ${type.toUpperCase()} SIGNAL - GOLD SCALPER PRO`;
+            
+            // Play sound (in a real implementation)
+            // const audio = new Audio('notification.mp3');
+            // audio.play();
+            
+            // Reset title after 2 seconds
+            setTimeout(() => {
+                document.title = originalTitle;
+            }, 2000);
+        }
+        
+        // Event listeners
+        document.getElementById('refresh-chart').addEventListener('click', initChart);
+        document.getElementById('apply-settings').addEventListener('click', () => {
+            calculateIndicators();
+            renderChart();
+        });
+        document.getElementById('clear-signals').addEventListener('click', () => {
+            const signalsContainer = document.getElementById('active-signals');
+            signalsContainer.innerHTML = '';
+            signals = [];
+        });
+        document.getElementById('hma-period').addEventListener('input', (e) => {
+            document.getElementById('hma-value').textContent = e.target.value;
+        });
+        document.getElementById('buy-now').addEventListener('click', () => {
+            executeTrade('buy', currentPrice);
+        });
+        document.getElementById('sell-now').addEventListener('click', () => {
+            executeTrade('sell', currentPrice);
+        });
+        document.getElementById('close-all').addEventListener('click', () => {
+            signals.forEach(signal => {
+                closeTrade(signal.id);
+            });
+        });
+        document.getElementById('emergency').addEventListener('click', () => {
+            alert('EMERGENCY STOP ACTIVATED - All positions closed');
+            signals.forEach(signal => {
+                closeTrade(signal.id);
+            });
+        });
+        
+        // Initialize the app
+        initChart();
+    </script>
+</body>
+</html>
