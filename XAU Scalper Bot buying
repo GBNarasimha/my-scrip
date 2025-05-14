@@ -1,0 +1,166 @@
+//+------------------------------------------------------------------+
+//|                                                   |
+//|                                  Fixed Buy/Sell version          |
+//+------------------------------------------------------------------+
+#property strict
+
+#include <Trade/Trade.mqh>
+CTrade trade;
+
+//--- input parameters
+input double LotSize = 0.1;
+input double RiskATRMultiplier = 1.5;
+input int FastEMA = 50;
+input int SlowEMA = 200;
+input double MaxSpread = 30.0; // in points
+input double MaxSlippage = 5.0; // in points
+input double DailyProfitTarget = 5000.0;
+input bool UseDynamicLot = false;
+input bool UseNewsFilter = false;
+
+//--- global variables
+int fastEMAHandle, slowEMAHandle, atrHandle;
+double StopLossPrice, TakeProfitPrice;
+ENUM_TIMEFRAMES TrendTimeframe = PERIOD_M5;
+ENUM_TIMEFRAMES EntryTimeframe = PERIOD_M1;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+   fastEMAHandle = iMA(Symbol(), TrendTimeframe, FastEMA, 0, MODE_EMA, PRICE_CLOSE);
+   slowEMAHandle = iMA(Symbol(), TrendTimeframe, SlowEMA, 0, MODE_EMA, PRICE_CLOSE);
+   atrHandle = iATR(Symbol(), EntryTimeframe, 14);
+   
+   // Print debug message on init
+   Print("XAU Scalper Bot initialized with FastEMA=", FastEMA, " SlowEMA=", SlowEMA);
+   return(INIT_SUCCEEDED);
+  }
+
+//+------------------------------------------------------------------+
+//| Check Spread                                                    |
+//+------------------------------------------------------------------+
+bool CheckSpread()
+  {
+   double spread = (SymbolInfoDouble(Symbol(), SYMBOL_ASK) - SymbolInfoDouble(Symbol(), SYMBOL_BID)) / _Point;
+   return (spread <= MaxSpread);
+  }
+
+//+------------------------------------------------------------------+
+//| Calculate Dynamic Lot Size                                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize()
+  {
+   if(!UseDynamicLot)
+      return LotSize;
+
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   return NormalizeDouble(balance * 0.01 / 1000.0,2); // Example dynamic lot calc
+  }
+
+//+------------------------------------------------------------------+
+//| Main Tick Function                                               |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+//--- Symbol filter
+   if(Symbol() != "XAUUSD" && Symbol() != "XAUJPY")
+      return;
+
+//--- Spread check
+   if(!CheckSpread())
+      return;
+
+//--- EMA Calculation for Trend
+   double fastEMA[], slowEMA[];
+   if(CopyBuffer(fastEMAHandle, 0, 0, 2, fastEMA) <= 0) return;
+   if(CopyBuffer(slowEMAHandle, 0, 0, 2, slowEMA) <= 0) return;
+
+//--- ATR Calculation
+   double atr[];
+   if(CopyBuffer(atrHandle, 0, 0, 1, atr) <= 0) return;
+
+//--- Order Block and Liquidity Sweep Detection (improved)
+   bool BuySignal = false;
+   bool SellSignal = false;
+
+   double lowPrev3 = iLow(Symbol(), EntryTimeframe, 3);
+   double lowPrev2 = iLow(Symbol(), EntryTimeframe, 2);
+   double lowPrev1 = iLow(Symbol(), EntryTimeframe, 1);
+   double highPrev3 = iHigh(Symbol(), EntryTimeframe, 3);
+   double highPrev2 = iHigh(Symbol(), EntryTimeframe, 2);
+   double highPrev1 = iHigh(Symbol(), EntryTimeframe, 1);
+
+   // More accurate liquidity sweep detection
+   if(lowPrev1 < lowPrev2) BuySignal = true;
+   if(highPrev1 > highPrev2) SellSignal = true;
+
+   // Print debug info for signals
+   if(BuySignal || SellSignal)
+     {
+      Print("Signal detected - Buy: ", BuySignal, " Sell: ", SellSignal);
+      Print("EMA Status - Fast: ", fastEMA[0], " Slow: ", slowEMA[0]);
+     }
+
+//--- Check if we're already in a position
+   bool inPosition = PositionSelect(Symbol());
+
+//--- Trade Execution
+   double lot = CalculateLotSize();
+   double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+   double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+
+   // BUY CONDITION
+   if(fastEMA[0] > slowEMA[0] && BuySignal && !inPosition)
+     {
+      StopLossPrice = bid - (RiskATRMultiplier * atr[0]);
+      TakeProfitPrice = bid + (RiskATRMultiplier * atr[0] * 1.5); // Slightly improved risk:reward
+      trade.SetDeviationInPoints((int)MaxSlippage);
+
+      Print("Executing BUY: Price=", ask, " SL=", StopLossPrice, " TP=", TakeProfitPrice);
+      trade.Buy(lot, Symbol(), ask, StopLossPrice, TakeProfitPrice, "XAU Scalper");
+     }
+
+   // SELL CONDITION
+   if(fastEMA[0] < slowEMA[0] && SellSignal && !inPosition)
+     {
+      StopLossPrice = ask + (RiskATRMultiplier * atr[0]);
+      TakeProfitPrice = ask - (RiskATRMultiplier * atr[0] * 1.5); // Slightly improved risk:reward
+      trade.SetDeviationInPoints((int)MaxSlippage);
+
+      Print("Executing SELL: Price=", bid, " SL=", StopLossPrice, " TP=", TakeProfitPrice);
+      trade.Sell(lot, Symbol(), bid, StopLossPrice, TakeProfitPrice, "XAU Scalper");
+     }
+
+//--- Daily Profit Check
+   double dailyProfit = CalculateDailyProfit();
+   if(dailyProfit >= DailyProfitTarget)
+     {
+      Print("Daily profit target reached: $", dailyProfit);
+      ExpertRemove();
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Calculate Today's Profit                                         |
+//+------------------------------------------------------------------+
+double CalculateDailyProfit()
+  {
+   double profit = 0;
+   datetime dayStart = iTime(Symbol(), PERIOD_D1, 0);
+
+   for(int i=PositionsTotal()-1; i>=0; i--)
+     {
+      ulong ticket = PositionGetTicket(i);
+      if(PositionSelectByTicket(ticket))
+        {
+         datetime openTime;
+         PositionGetInteger(POSITION_TIME, openTime);
+         if(openTime >= dayStart)
+            profit += PositionGetDouble(POSITION_PROFIT);
+        }
+     }
+   return profit;
+  }
+//+------------------------------------------------------------------+
