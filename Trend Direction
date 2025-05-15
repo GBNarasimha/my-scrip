@@ -57,7 +57,7 @@ int OnInit()
    
    // Set arrow size
    PlotIndexSetInteger(0, PLOT_ARROW_SHIFT, -ArrowOffset);
-   PlotIndexSetInteger(1, PLOT_ARROW_SHIFT, ArrowOffset);
+   PlotIndexSetInteger(1, PLOT_ARROW_SHIFT, -ArrowOffset); // Negative offset to move arrow above price
    PlotIndexSetInteger(0, PLOT_DRAW_BEGIN, SlowMA);
    PlotIndexSetInteger(1, PLOT_DRAW_BEGIN, SlowMA);
    
@@ -131,7 +131,7 @@ int OnCalculate(const int rates_total,
          if(trend_score > 0 && prev_trend_score <= 0)
             UpArrowBuffer[i] = low[i];
          else if(trend_score < 0 && prev_trend_score >= 0)
-            DownArrowBuffer[i] = high[i];
+            DownArrowBuffer[i] = high[i]; // Keep at high[i] for better visibility above price
       }
       else
       {
@@ -139,7 +139,7 @@ int OnCalculate(const int rates_total,
          if(trend_score > 0)
             UpArrowBuffer[i] = low[i];
          else if(trend_score < 0)
-            DownArrowBuffer[i] = high[i];
+            DownArrowBuffer[i] = high[i]; // Keep at high[i] for down arrows
       }
    }
    
