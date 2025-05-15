@@ -1,0 +1,181 @@
+//+------------------------------------------------------------------+
+//|                                 Multi-Timeframe Trend Direction |
+//|                                      Copyright 2025, Your Name  |
+//|                                                                 |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025"
+#property link      ""
+#property version   "1.00"
+#property strict
+#property indicator_chart_window
+#property indicator_buffers 2
+#property indicator_plots   2
+
+// Arrow indicators properties
+#property indicator_label1  "Up Trend"
+#property indicator_type1   DRAW_ARROW
+#property indicator_color1  clrLime
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  3
+
+#property indicator_label2  "Down Trend"
+#property indicator_type2   DRAW_ARROW
+#property indicator_color2  clrRed
+#property indicator_style2  STYLE_SOLID
+#property indicator_width2  3
+
+// Indicator input parameters
+input ENUM_TIMEFRAMES TimeFrame1 = PERIOD_CURRENT; // Timeframe 1
+input ENUM_TIMEFRAMES TimeFrame2 = PERIOD_H4;      // Timeframe 2
+input ENUM_TIMEFRAMES TimeFrame3 = PERIOD_D1;      // Timeframe 3
+input int             FastMA     = 8;              // Fast MA Period
+input int             SlowMA     = 21;             // Slow MA Period
+input ENUM_MA_METHOD  MAMethod   = MODE_EMA;       // MA Method
+input int             ArrowSize  = 5;              // Arrow Size
+input int             ArrowOffset = 10;            // Arrow Distance from Price (in points)
+
+// Buffers for indicator values
+double UpArrowBuffer[];
+double DownArrowBuffer[];
+
+// Global variables
+int arrowUpCode = 233;    // Code for up arrow (CHARACTER_ARROWUP)
+int arrowDownCode = 234;  // Code for down arrow (CHARACTER_ARROWDOWN)
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Set indicator buffers
+   SetIndexBuffer(0, UpArrowBuffer, INDICATOR_DATA);
+   SetIndexBuffer(1, DownArrowBuffer, INDICATOR_DATA);
+   
+   // Set arrow codes
+   PlotIndexSetInteger(0, PLOT_ARROW, arrowUpCode);
+   PlotIndexSetInteger(1, PLOT_ARROW, arrowDownCode);
+   
+   // Set arrow size
+   PlotIndexSetInteger(0, PLOT_ARROW_SHIFT, -ArrowOffset);
+   PlotIndexSetInteger(1, PLOT_ARROW_SHIFT, ArrowOffset);
+   PlotIndexSetInteger(0, PLOT_DRAW_BEGIN, SlowMA);
+   PlotIndexSetInteger(1, PLOT_DRAW_BEGIN, SlowMA);
+   
+   // Set empty value
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   PlotIndexSetDouble(1, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   
+   // Set indicator name
+   IndicatorSetString(INDICATOR_SHORTNAME, "Multi-Timeframe Trend Direction");
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Check if there are enough candles
+   if(rates_total < SlowMA)
+      return(0);
+      
+   // Initialize arrays with empty values
+   ArrayInitialize(UpArrowBuffer, EMPTY_VALUE);
+   ArrayInitialize(DownArrowBuffer, EMPTY_VALUE);
+   
+   // Calculate starting position
+   int start;
+   if(prev_calculated <= 0)
+      start = SlowMA;
+   else
+      start = prev_calculated - 1;
+   
+   if(start < SlowMA)
+      start = SlowMA;
+      
+   // Main calculation loop
+   for(int i = start; i < rates_total && !IsStopped(); i++)
+   {
+      // Get trend direction for each timeframe
+      bool tf1_uptrend = IsTrendUp(TimeFrame1, i);
+      bool tf2_uptrend = IsTrendUp(TimeFrame2, i);
+      bool tf3_uptrend = IsTrendUp(TimeFrame3, i);
+      
+      // Calculate overall trend score (-3 to +3)
+      int trend_score = (tf1_uptrend ? 1 : -1) + 
+                        (tf2_uptrend ? 1 : -1) + 
+                        (tf3_uptrend ? 1 : -1);
+      
+      // Check for trend change
+      if(i > start)
+      {
+         bool prev_tf1_uptrend = IsTrendUp(TimeFrame1, i-1);
+         bool prev_tf2_uptrend = IsTrendUp(TimeFrame2, i-1);
+         bool prev_tf3_uptrend = IsTrendUp(TimeFrame3, i-1);
+         
+         int prev_trend_score = (prev_tf1_uptrend ? 1 : -1) + 
+                              (prev_tf2_uptrend ? 1 : -1) + 
+                              (prev_tf3_uptrend ? 1 : -1);
+         
+         // Signal a trend change
+         if(trend_score > 0 && prev_trend_score <= 0)
+            UpArrowBuffer[i] = low[i];
+         else if(trend_score < 0 && prev_trend_score >= 0)
+            DownArrowBuffer[i] = high[i];
+      }
+      else
+      {
+         // For the starting candle
+         if(trend_score > 0)
+            UpArrowBuffer[i] = low[i];
+         else if(trend_score < 0)
+            DownArrowBuffer[i] = high[i];
+      }
+   }
+   
+   // Return value of prev_calculated for next call
+   return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Check if current trend is up for the specified timeframe         |
+//+------------------------------------------------------------------+
+bool IsTrendUp(ENUM_TIMEFRAMES timeframe, int shift)
+{
+   if(timeframe == PERIOD_CURRENT)
+      timeframe = Period();
+      
+   datetime time = iTime(_Symbol, Period(), shift);
+   int tf_shift = iBarShift(_Symbol, timeframe, time, false);
+   
+   if(tf_shift < 0)
+      return false;
+   
+   // Get indicator handles
+   int fast_ma_handle = iMA(_Symbol, timeframe, FastMA, 0, MAMethod, PRICE_CLOSE);
+   int slow_ma_handle = iMA(_Symbol, timeframe, SlowMA, 0, MAMethod, PRICE_CLOSE);
+   
+   if(fast_ma_handle == INVALID_HANDLE || slow_ma_handle == INVALID_HANDLE)
+      return false;
+   
+   // Prepare arrays
+   double fast_ma_buffer[];
+   double slow_ma_buffer[];
+   
+   // Copy data
+   if(CopyBuffer(fast_ma_handle, 0, tf_shift, 1, fast_ma_buffer) <= 0) return false;
+   if(CopyBuffer(slow_ma_handle, 0, tf_shift, 1, slow_ma_buffer) <= 0) return false;
+   
+   // Check for trend direction
+   return (fast_ma_buffer[0] > slow_ma_buffer[0]);
+}
