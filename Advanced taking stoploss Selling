@@ -1,0 +1,92 @@
+//+------------------------------------------------------------------+
+//|                                Advanced Trailing Stop Loss Sell.mq5 |
+//|                                                                    |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025"
+#property version   "1.00"
+#property strict
+// Include the Trade.mqh file
+#include <Trade\Trade.mqh>
+// Create an instance of CTrade
+CTrade trade;
+// Global variables
+string _symbol;
+input double MaxSpreadPoints = 20; // Maximum allowed spread in points
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Initialize global variables
+   _symbol = Symbol();
+   
+   return(INIT_SUCCEEDED);
+}
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // Get the ask price and bid price
+   double Ask = NormalizeDouble(SymbolInfoDouble(_symbol, SYMBOL_ASK), Digits());
+   double Bid = NormalizeDouble(SymbolInfoDouble(_symbol, SYMBOL_BID), Digits());
+   double point = Point();
+   
+   // Calculate spread in points
+   double spreadPoints = (Ask - Bid) / point;
+   
+   // Check if spread is too wide
+   if(spreadPoints > MaxSpreadPoints)
+   {
+      // Spread is too wide - skip trading
+      Print("Current spread (", spreadPoints, " points) exceeds maximum allowed (", MaxSpreadPoints, " points)");
+      return;
+   }
+   
+   // If we have less than 2 positions
+   if (PositionsTotal() < 2)
+   {
+      // Open a test sell position
+      trade.Sell(0.10, _symbol, Bid, (Bid + 1000 * point), (Bid - 500 * point), NULL);
+   }
+   
+   // Call the Trailing stop Module
+   CheckTrailingStop(Bid);
+}
+//+------------------------------------------------------------------+
+//| Check and adjust trailing stops                                  |
+//+------------------------------------------------------------------+
+void CheckTrailingStop(double Bid)
+{
+   double point = Point();
+   
+   // Set the desired stop loss to 150 Points
+   double SL = NormalizeDouble(Bid + 150 * point, Digits());
+   
+   // Check all open positions for the current symbol
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      // Select the position by index
+      if(PositionSelectByTicket(PositionGetTicket(i)))
+      {
+         string positionSymbol = PositionGetString(POSITION_SYMBOL); // Get position symbol
+         
+         if(_symbol == positionSymbol) // If chart symbol equals position symbol
+         {
+            // Get the ticket number
+            ulong positionTicket = PositionGetInteger(POSITION_TICKET);
+            
+            // Get the current stop loss
+            double currentStopLoss = PositionGetDouble(POSITION_SL);
+            
+            // If current stop loss is above our trailing threshold
+            if(currentStopLoss > SL || currentStopLoss == 0)
+            {
+               // Modify the stop loss by moving it down 10 points
+               trade.PositionModify(positionTicket, (currentStopLoss - 10 * point), PositionGetDouble(POSITION_TP));
+            }
+         }
+      }
+   }
+}
+//+------------------------------------------------------------------+
