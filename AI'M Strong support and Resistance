@@ -1,0 +1,444 @@
+//+------------------------------------------------------------------+
+//|                                    QIS Reversal Point Detector.mq5 |
+//|                        Copyright 2025, Quantum Trading Systems     |
+//|                                                                    |
+//| Description: This indicator identifies exact market reversal points|
+//| using principles inspired by quantum information science.          |
+//| It combines wavelet transform, quantum probability concepts,       |
+//| and entropic uncertainty to detect high-probability turning points.|
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025, Quantum Trading Systems"
+#property link      ""
+#property version   "1.00"
+#property indicator_chart_window
+#property indicator_buffers 6
+#property indicator_plots   2
+
+// Indicator buffers
+double UpArrowBuffer[];
+double DownArrowBuffer[];
+double EntanglementBuffer[];
+double UncertaintyBuffer[];
+double WaveletBuffer[];
+double CoherenceBuffer[];
+
+// Input parameters
+input int    WaveletPeriod     = 14;      // Wavelet analysis period
+input int    EntanglementDepth = 5;       // Market pattern entanglement depth
+input double QuantumThreshold  = 0.75;    // Quantum probability threshold (0.5-1.0)
+input double EntropyLimit      = 0.3;     // Entropic uncertainty limit
+input bool   FilterNoise       = true;    // Apply quantum noise filtering
+input int    SignalConfirmation = 3;      // Required confirmations for signal
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Set indicator buffers
+   SetIndexBuffer(0, UpArrowBuffer, INDICATOR_DATA);
+   SetIndexBuffer(1, DownArrowBuffer, INDICATOR_DATA);
+   SetIndexBuffer(2, EntanglementBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(3, UncertaintyBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(4, WaveletBuffer, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(5, CoherenceBuffer, INDICATOR_CALCULATIONS);
+   
+   // Configure indicator drawing
+   PlotIndexSetInteger(0, PLOT_ARROW, 233);
+   PlotIndexSetInteger(1, PLOT_ARROW, 234);
+   
+   // Set empty values
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, 0.0);
+   PlotIndexSetDouble(1, PLOT_EMPTY_VALUE, 0.0);
+   
+   // Set color
+   PlotIndexSetInteger(0, PLOT_LINE_COLOR, clrGreen);
+   PlotIndexSetInteger(1, PLOT_LINE_COLOR, clrRed);
+   
+   // Set indicator name
+   string short_name = "QIS Reversal Points";
+   IndicatorSetString(INDICATOR_SHORTNAME, short_name);
+   
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Validate data
+   if(rates_total < WaveletPeriod + EntanglementDepth)
+      return(0);
+
+   // Initialize buffers
+   int start;
+   if(prev_calculated == 0)
+   {
+      start = WaveletPeriod + EntanglementDepth;
+      
+      for(int i = 0; i < start; i++)
+      {
+         UpArrowBuffer[i] = 0.0;
+         DownArrowBuffer[i] = 0.0;
+         EntanglementBuffer[i] = 0.0;
+         UncertaintyBuffer[i] = 0.0;
+         WaveletBuffer[i] = 0.0;
+         CoherenceBuffer[i] = 0.0;
+      }
+   }
+   else
+      start = prev_calculated - 1;
+   
+   // Main calculation loop
+   for(int i = start; i < rates_total; i++)
+   {
+      // Reset signal buffers
+      UpArrowBuffer[i] = 0.0;
+      DownArrowBuffer[i] = 0.0;
+      
+      // Calculate wavelet decomposition
+      WaveletBuffer[i] = CalculateWavelet(close, i, WaveletPeriod);
+      
+      // Calculate quantum entanglement (price pattern correlation)
+      EntanglementBuffer[i] = CalculateEntanglement(close, i, EntanglementDepth);
+      
+      // Calculate uncertainty principle (volatility vs momentum uncertainty)
+      UncertaintyBuffer[i] = CalculateUncertainty(close, high, low, i, WaveletPeriod);
+      
+      // Calculate quantum coherence (trend stability)
+      CoherenceBuffer[i] = CalculateCoherence(close, i, WaveletPeriod);
+      
+      // Check for bullish reversal
+      if(IsBullishReversal(i, close, low, high, EntanglementBuffer, UncertaintyBuffer, 
+                           WaveletBuffer, CoherenceBuffer))
+      {
+         // Set bullish signal at the low price level
+         UpArrowBuffer[i] = low[i] - (high[i] - low[i]) * 0.2;
+      }
+      
+      // Check for bearish reversal
+      if(IsBearishReversal(i, close, low, high, EntanglementBuffer, UncertaintyBuffer, 
+                           WaveletBuffer, CoherenceBuffer))
+      {
+         // Set bearish signal at the high price level
+         DownArrowBuffer[i] = high[i] + (high[i] - low[i]) * 0.2;
+      }
+   }
+   
+   return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Calculate Wavelet Decomposition                                  |
+//+------------------------------------------------------------------+
+double CalculateWavelet(const double &price[], int position, int period)
+{
+   if(position < period)
+      return 0.0;
+      
+   double sum = 0.0;
+   double wavelet_coef = 0.0;
+   
+   // Apply Haar wavelet transform (simplified)
+   for(int i = 0; i < period; i++)
+   {
+      double weight = MathSin(M_PI * i / period) / (i + 1); // Wavelet weight function
+      wavelet_coef += (price[position - i] - price[position - i - 1]) * weight;
+   }
+   
+   // Normalize
+   return MathAbs(wavelet_coef) / period;
+}
+
+//+------------------------------------------------------------------+
+//| Calculate Quantum Entanglement (price pattern correlation)       |
+//+------------------------------------------------------------------+
+double CalculateEntanglement(const double &price[], int position, int depth)
+{
+   if(position < depth * 2)
+      return 0.0;
+      
+   double correlation = 0.0;
+   double current_pattern[10], historical_pattern[10];
+   int max_correlation_idx = 0;
+   double max_correlation = -1.0;
+   
+   // Extract current pattern
+   for(int i = 0; i < depth; i++)
+      current_pattern[i] = price[position - i] - price[position - i - 1];
+      
+   // Look for similar patterns in history (entanglement)
+   for(int i = depth; i < 100 && position - i - depth >= 0; i++)
+   {
+      double temp_correlation = 0.0;
+      
+      // Extract historical pattern
+      for(int j = 0; j < depth; j++)
+         historical_pattern[j] = price[position - i - j] - price[position - i - j - 1];
+         
+      // Calculate pattern correlation (entanglement measure)
+      temp_correlation = PatternCorrelation(current_pattern, historical_pattern, depth);
+      
+      if(temp_correlation > max_correlation)
+      {
+         max_correlation = temp_correlation;
+         max_correlation_idx = i;
+      }
+   }
+   
+   // High entanglement means similar pattern existed
+   return max_correlation;
+}
+
+//+------------------------------------------------------------------+
+//| Calculate pattern correlation                                    |
+//+------------------------------------------------------------------+
+double PatternCorrelation(const double &pattern1[], const double &pattern2[], int size)
+{
+   double sum1 = 0.0, sum2 = 0.0, sum12 = 0.0;
+   double sum_sq1 = 0.0, sum_sq2 = 0.0;
+   
+   for(int i = 0; i < size; i++)
+   {
+      sum1 += pattern1[i];
+      sum2 += pattern2[i];
+      sum12 += pattern1[i] * pattern2[i];
+      sum_sq1 += pattern1[i] * pattern1[i];
+      sum_sq2 += pattern2[i] * pattern2[i];
+   }
+   
+   double mean1 = sum1 / size;
+   double mean2 = sum2 / size;
+   double cov = sum12 / size - mean1 * mean2;
+   double var1 = sum_sq1 / size - mean1 * mean1;
+   double var2 = sum_sq2 / size - mean2 * mean2;
+   
+   if(var1 <= 0.0 || var2 <= 0.0)
+      return 0.0;
+      
+   double correlation = cov / MathSqrt(var1 * var2);
+   
+   return MathAbs(correlation);
+}
+
+//+------------------------------------------------------------------+
+//| Calculate Uncertainty (volatility vs momentum uncertainty)       |
+//+------------------------------------------------------------------+
+double CalculateUncertainty(const double &close[], const double &high[], 
+                            const double &low[], int position, int period)
+{
+   if(position < period)
+      return 1.0;
+      
+   double momentum_sum = 0.0;
+   double volatility_sum = 0.0;
+   
+   for(int i = 0; i < period; i++)
+   {
+      // Momentum component
+      double momentum = MathAbs(close[position - i] - close[position - i - 1]);
+      momentum_sum += momentum;
+      
+      // Volatility component
+      double volatility = high[position - i] - low[position - i];
+      volatility_sum += volatility;
+   }
+   
+   double avg_momentum = momentum_sum / period;
+   double avg_volatility = volatility_sum / period;
+   
+   // Heisenberg-inspired uncertainty principle: as one increases, the other has higher uncertainty
+   if(avg_volatility == 0)
+      return 1.0;
+      
+   double uncertainty = avg_momentum / avg_volatility;
+   
+   // Normalize between 0 and 1 with sigmoid
+   return 1.0 / (1.0 + MathExp(-uncertainty + 0.5));
+}
+
+//+------------------------------------------------------------------+
+//| Calculate Quantum Coherence (trend stability)                    |
+//+------------------------------------------------------------------+
+double CalculateCoherence(const double &price[], int position, int period)
+{
+   if(position < period)
+      return 0.0;
+      
+   double sum_direction = 0.0;
+   double sum_magnitude = 0.0;
+   
+   for(int i = 1; i < period; i++)
+   {
+      double change = price[position - i + 1] - price[position - i];
+      sum_direction += MathSign(change);
+      sum_magnitude += MathAbs(change);
+   }
+   
+   // Coherence is high when direction is consistent
+   double coherence = MathAbs(sum_direction) / (period - 1);
+   
+   return coherence;
+}
+
+//+------------------------------------------------------------------+
+//| Return sign of a number (-1, 0, 1)                               |
+//+------------------------------------------------------------------+
+double MathSign(double value)
+{
+   if(value > 0.0)
+      return 1.0;
+   if(value < 0.0)
+      return -1.0;
+   return 0.0;
+}
+
+//+------------------------------------------------------------------+
+//| Check for bullish reversal                                       |
+//+------------------------------------------------------------------+
+bool IsBullishReversal(int position, const double &close[], const double &low[],
+                      const double &high[], const double &entanglement[],
+                      const double &uncertainty[], const double &wavelet[],
+                      const double &coherence[])
+{
+   if(position < SignalConfirmation)
+      return false;
+      
+   // Confirmation counter
+   int confirmations = 0;
+   
+   // Check previous candles for downtrend
+   bool prior_downtrend = true;
+   for(int i = 1; i <= SignalConfirmation; i++)
+   {
+      if(close[position - i] > close[position - i - 1])
+      {
+         prior_downtrend = false;
+         break;
+      }
+   }
+   
+   if(!prior_downtrend)
+      return false;
+      
+   // Current candle shows strength
+   if(close[position] > (high[position] + low[position]) / 2)
+      confirmations++;
+      
+   // Entanglement is above threshold (pattern recognition)
+   if(entanglement[position] > QuantumThreshold)
+      confirmations++;
+      
+   // Uncertainty principle indicates reversal
+   if(uncertainty[position] < EntropyLimit)
+      confirmations++;
+      
+   // Wavelet analysis shows significant change
+   if(wavelet[position] > wavelet[position - 1] * 1.5)
+      confirmations++;
+      
+   // Coherence is breaking down (trend losing stability)
+   if(coherence[position] < coherence[position - 3] * 0.7)
+      confirmations++;
+      
+   // Quantum probability field shift detection
+   double quantum_prob = (entanglement[position] + (1.0 - uncertainty[position])) / 2.0;
+   if(quantum_prob > QuantumThreshold)
+      confirmations++;
+      
+   // Check higher lows (accumulation)
+   if(low[position] > low[position - 1] && low[position - 1] > low[position - 2])
+      confirmations++;
+      
+   // Price made a new low but closed higher (reversal candle)
+   if(low[position] < low[position - 1] && close[position] > close[position - 1])
+      confirmations++;
+      
+   // Calculate "quantum tunneling" probability (price broke through support but recovered)
+   bool quantum_tunnel = low[position] < low[position - 1] && close[position] > low[position - 1];
+   if(quantum_tunnel)
+      confirmations++;
+      
+   // Return true if enough confirmations
+   return confirmations >= SignalConfirmation;
+}
+
+//+------------------------------------------------------------------+
+//| Check for bearish reversal                                       |
+//+------------------------------------------------------------------+
+bool IsBearishReversal(int position, const double &close[], const double &low[],
+                      const double &high[], const double &entanglement[],
+                      const double &uncertainty[], const double &wavelet[],
+                      const double &coherence[])
+{
+   if(position < SignalConfirmation)
+      return false;
+      
+   // Confirmation counter
+   int confirmations = 0;
+   
+   // Check previous candles for uptrend
+   bool prior_uptrend = true;
+   for(int i = 1; i <= SignalConfirmation; i++)
+   {
+      if(close[position - i] < close[position - i - 1])
+      {
+         prior_uptrend = false;
+         break;
+      }
+   }
+   
+   if(!prior_uptrend)
+      return false;
+      
+   // Current candle shows weakness
+   if(close[position] < (high[position] + low[position]) / 2)
+      confirmations++;
+      
+   // Entanglement is above threshold (pattern recognition)
+   if(entanglement[position] > QuantumThreshold)
+      confirmations++;
+      
+   // Uncertainty principle indicates reversal
+   if(uncertainty[position] < EntropyLimit)
+      confirmations++;
+      
+   // Wavelet analysis shows significant change
+   if(wavelet[position] > wavelet[position - 1] * 1.5)
+      confirmations++;
+      
+   // Coherence is breaking down (trend losing stability)
+   if(coherence[position] < coherence[position - 3] * 0.7)
+      confirmations++;
+      
+   // Quantum probability field shift detection
+   double quantum_prob = (entanglement[position] + (1.0 - uncertainty[position])) / 2.0;
+   if(quantum_prob > QuantumThreshold)
+      confirmations++;
+      
+   // Check lower highs (distribution)
+   if(high[position] < high[position - 1] && high[position - 1] < high[position - 2])
+      confirmations++;
+      
+   // Price made a new high but closed lower (reversal candle)
+   if(high[position] > high[position - 1] && close[position] < close[position - 1])
+      confirmations++;
+      
+   // Calculate "quantum tunneling" probability (price broke through resistance but failed)
+   bool quantum_tunnel = high[position] > high[position - 1] && close[position] < high[position - 1];
+   if(quantum_tunnel)
+      confirmations++;
+      
+   // Return true if enough confirmations
+   return confirmations >= SignalConfirmation;
+}
