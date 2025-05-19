@@ -1,0 +1,1204 @@
+//+------------------------------------------------------------------+
+//|                                           MarketSentimentPanel.mq5 |
+//|                                  Copyright 2025, Your Company Name |
+//|                                       https://www.yourwebsite.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025, Your Company Name"
+#property link      "https://www.yourwebsite.com"
+#property version   "1.00"
+#property indicator_chart_window
+#property indicator_plots 0
+
+// Input parameters
+input int lookbackPeriod = 14;           // Lookback period for calculations
+input bool showTimeframeButtons = true;   // Show timeframe selection buttons
+input color sellColor = clrCrimson;       // Sell signal color
+input color neutralColor = clrDimGray;    // Neutral signal color
+input color buyColor = clrGreen;          // Buy signal color
+input int panelWidth = 200;               // Width of the panel
+input int panelMargin = 10;               // Margin from chart edge
+
+// Global variables
+int panel_width = panelWidth;
+int panel_x_pos;
+int panel_y_pos = 30;
+string indicator_name = "MarketSentimentPanel";
+int timeframes[] = {PERIOD_M1, PERIOD_M5, PERIOD_M15, PERIOD_M30};
+string timeframe_labels[] = {"1 minute", "5 minutes", "15 minutes", "30 minutes"};
+int selected_timeframe_index = 0;
+int sell_signals = 0;
+int neutral_signals = 0;
+int buy_signals = 0;
+int osc_sell_signals = 0;
+int osc_neutral_signals = 0;
+int osc_buy_signals = 0;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    // Set the panel position
+    panel_x_pos = (int)ChartGetInteger(0, CHART_WIDTH_IN_PIXELS) - panel_width - panelMargin;
+    
+    // Create main panel
+    CreatePanel();
+    
+    ChartRedraw();
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+    // Calculate signals
+    CalculateSignals(close);
+    CalculateOscillators(close);
+    
+    // Update the panel
+    UpdatePanel();
+    
+    return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Calculate basic signals                                          |
+//+------------------------------------------------------------------+
+void CalculateSignals(const double &close[])
+{
+    if(ArraySize(close) == 0) return;
+    
+    sell_signals = 0;
+    neutral_signals = 0;
+    buy_signals = 0;
+    
+    ENUM_TIMEFRAMES tf = (ENUM_TIMEFRAMES)timeframes[selected_timeframe_index];
+    
+    // Calculate MA signals
+    int ma_signal = CheckMovingAverages(tf);
+    if(ma_signal < 0) sell_signals++;
+    else if(ma_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate Bollinger Bands signal
+    int bb_signal = CheckBollingerBands(tf, close);
+    if(bb_signal < 0) sell_signals++;
+    else if(bb_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate MACD signal
+    int macd_signal = CheckMACD(tf);
+    if(macd_signal < 0) sell_signals++;
+    else if(macd_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate RSI signal
+    int rsi_signal = CheckRSI(tf);
+    if(rsi_signal < 0) sell_signals++;
+    else if(rsi_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate Stochastic signal
+    int stoch_signal = CheckStochastic(tf);
+    if(stoch_signal < 0) sell_signals++;
+    else if(stoch_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate ADX signal
+    int adx_signal = CheckADX(tf);
+    if(adx_signal < 0) sell_signals++;
+    else if(adx_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate Parabolic SAR signal
+    int psar_signal = CheckParabolicSAR(tf);
+    if(psar_signal < 0) sell_signals++;
+    else if(psar_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate Ichimoku signal
+    int ichimoku_signal = CheckIchimoku(tf);
+    if(ichimoku_signal < 0) sell_signals++;
+    else if(ichimoku_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Calculate CCI signal
+    int cci_signal = CheckCCI(tf);
+    if(cci_signal < 0) sell_signals++;
+    else if(cci_signal > 0) buy_signals++;
+    else neutral_signals++;
+    
+    // Volume analysis
+    int volume_signal = CheckVolume(tf);
+    if(volume_signal < 0) sell_signals++;
+    else if(volume_signal > 0) buy_signals++;
+    else neutral_signals++;
+}
+
+//+------------------------------------------------------------------+
+//| Calculate oscillator signals                                     |
+//+------------------------------------------------------------------+
+void CalculateOscillators(const double &close[])
+{
+    if(ArraySize(close) == 0) return;
+    
+    osc_sell_signals = 0;
+    osc_neutral_signals = 0;
+    osc_buy_signals = 0;
+    
+    ENUM_TIMEFRAMES tf = (ENUM_TIMEFRAMES)timeframes[selected_timeframe_index];
+    
+    // RSI
+    int rsi_signal = CheckRSI(tf);
+    if(rsi_signal < 0) osc_sell_signals++;
+    else if(rsi_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Stochastic
+    int stoch_signal = CheckStochastic(tf);
+    if(stoch_signal < 0) osc_sell_signals++;
+    else if(stoch_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // CCI
+    int cci_signal = CheckCCI(tf);
+    if(cci_signal < 0) osc_sell_signals++;
+    else if(cci_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Williams %R
+    int williams_signal = CheckWilliamsR(tf);
+    if(williams_signal < 0) osc_sell_signals++;
+    else if(williams_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Momentum
+    int momentum_signal = CheckMomentum(tf);
+    if(momentum_signal < 0) osc_sell_signals++;
+    else if(momentum_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Awesome Oscillator
+    int ao_signal = CheckAwesomeOscillator(tf);
+    if(ao_signal < 0) osc_sell_signals++;
+    else if(ao_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // ATR
+    int atr_signal = CheckATR(tf);
+    if(atr_signal < 0) osc_sell_signals++;
+    else if(atr_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // DeMarker
+    int demarker_signal = CheckDeMarker(tf);
+    if(demarker_signal < 0) osc_sell_signals++;
+    else if(demarker_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // MFI
+    int mfi_signal = CheckMFI(tf);
+    if(mfi_signal < 0) osc_sell_signals++;
+    else if(mfi_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Bears Power
+    int bears_signal = CheckBearsPower(tf);
+    if(bears_signal < 0) osc_sell_signals++;
+    else if(bears_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+    
+    // Bulls Power
+    int bulls_signal = CheckBullsPower(tf);
+    if(bulls_signal < 0) osc_sell_signals++;
+    else if(bulls_signal > 0) osc_buy_signals++;
+    else osc_neutral_signals++;
+}
+
+//+------------------------------------------------------------------+
+//| Signal checking functions                                        |
+//+------------------------------------------------------------------+
+int CheckMovingAverages(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_ma_fast = iMA(NULL, timeframe, 20, 0, MODE_EMA, PRICE_CLOSE);
+    int handle_ma_slow = iMA(NULL, timeframe, 50, 0, MODE_EMA, PRICE_CLOSE);
+    
+    if(handle_ma_fast == INVALID_HANDLE || handle_ma_slow == INVALID_HANDLE)
+        return 0;
+    
+    double ma_fast_buffer[2];
+    double ma_slow_buffer[2];
+    
+    if(CopyBuffer(handle_ma_fast, 0, 0, 2, ma_fast_buffer) <= 0 ||
+       CopyBuffer(handle_ma_slow, 0, 0, 2, ma_slow_buffer) <= 0)
+    {
+        IndicatorRelease(handle_ma_fast);
+        IndicatorRelease(handle_ma_slow);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_ma_fast);
+    IndicatorRelease(handle_ma_slow);
+    
+    if(ma_fast_buffer[0] > ma_slow_buffer[0] && ma_fast_buffer[1] <= ma_slow_buffer[1])
+        return 1;  // Buy signal - Fast MA crossed above Slow MA
+    else if(ma_fast_buffer[0] < ma_slow_buffer[0] && ma_fast_buffer[1] >= ma_slow_buffer[1])
+        return -1; // Sell signal - Fast MA crossed below Slow MA
+    else if(ma_fast_buffer[0] > ma_slow_buffer[0])
+        return 1;  // Buy signal - Fast MA above Slow MA
+    else if(ma_fast_buffer[0] < ma_slow_buffer[0])
+        return -1; // Sell signal - Fast MA below Slow MA
+    
+    return 0;      // Neutral
+}
+
+int CheckBollingerBands(ENUM_TIMEFRAMES timeframe, const double &close[])
+{
+    int handle_bb = iBands(NULL, timeframe, 20, 2, 0, PRICE_CLOSE);
+    
+    if(handle_bb == INVALID_HANDLE)
+        return 0;
+    
+    double upper_buffer[1], middle_buffer[1], lower_buffer[1];
+    
+    if(CopyBuffer(handle_bb, 0, 0, 1, middle_buffer) <= 0 ||
+       CopyBuffer(handle_bb, 1, 0, 1, upper_buffer) <= 0 ||
+       CopyBuffer(handle_bb, 2, 0, 1, lower_buffer) <= 0)
+    {
+        IndicatorRelease(handle_bb);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_bb);
+    
+    double current_close = close[0];
+    
+    if(current_close > upper_buffer[0])
+        return -1; // Sell signal - Price above upper band (overbought)
+    else if(current_close < lower_buffer[0])
+        return 1;  // Buy signal - Price below lower band (oversold)
+    
+    return 0;      // Neutral - Price within bands
+}
+
+int CheckMACD(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_macd = iMACD(NULL, timeframe, 12, 26, 9, PRICE_CLOSE);
+    
+    if(handle_macd == INVALID_HANDLE)
+        return 0;
+    
+    double macd_buffer[2];
+    double signal_buffer[2];
+    
+    if(CopyBuffer(handle_macd, 0, 0, 2, macd_buffer) <= 0 ||
+       CopyBuffer(handle_macd, 1, 0, 2, signal_buffer) <= 0)
+    {
+        IndicatorRelease(handle_macd);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_macd);
+    
+    if(macd_buffer[0] > signal_buffer[0] && macd_buffer[1] <= signal_buffer[1])
+        return 1;  // Buy signal - MACD crossed above Signal line
+    else if(macd_buffer[0] < signal_buffer[0] && macd_buffer[1] >= signal_buffer[1])
+        return -1; // Sell signal - MACD crossed below Signal line
+    else if(macd_buffer[0] > signal_buffer[0])
+        return 1;  // Buy signal - MACD above Signal line
+    else if(macd_buffer[0] < signal_buffer[0])
+        return -1; // Sell signal - MACD below Signal line
+    
+    return 0;      // Neutral
+}
+
+int CheckRSI(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_rsi = iRSI(NULL, timeframe, 14, PRICE_CLOSE);
+    
+    if(handle_rsi == INVALID_HANDLE)
+        return 0;
+    
+    double rsi_buffer[2];
+    
+    if(CopyBuffer(handle_rsi, 0, 0, 2, rsi_buffer) <= 0)
+    {
+        IndicatorRelease(handle_rsi);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_rsi);
+    
+    if(rsi_buffer[0] < 30 && rsi_buffer[1] <= 30)
+        return 1;  // Buy signal - RSI below 30 (oversold)
+    else if(rsi_buffer[0] > 70 && rsi_buffer[1] >= 70)
+        return -1; // Sell signal - RSI above 70 (overbought)
+    else if(rsi_buffer[0] < 30 && rsi_buffer[1] > 30)
+        return 1;  // Buy signal - RSI crossed below 30
+    else if(rsi_buffer[0] > 70 && rsi_buffer[1] < 70)
+        return -1; // Sell signal - RSI crossed above 70
+    
+    return 0;      // Neutral
+}
+
+int CheckStochastic(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_stoch = iStochastic(NULL, timeframe, 5, 3, 3, MODE_SMA, STO_LOWHIGH);
+    
+    if(handle_stoch == INVALID_HANDLE)
+        return 0;
+    
+    double k_buffer[2];
+    double d_buffer[2];
+    
+    if(CopyBuffer(handle_stoch, 0, 0, 2, k_buffer) <= 0 ||
+       CopyBuffer(handle_stoch, 1, 0, 2, d_buffer) <= 0)
+    {
+        IndicatorRelease(handle_stoch);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_stoch);
+    
+    if(k_buffer[0] < 20 && d_buffer[0] < 20)
+        return 1;  // Buy signal - Stochastic below 20 (oversold)
+    else if(k_buffer[0] > 80 && d_buffer[0] > 80)
+        return -1; // Sell signal - Stochastic above 80 (overbought)
+    else if(k_buffer[0] > d_buffer[0] && k_buffer[1] <= d_buffer[1] && k_buffer[0] < 20)
+        return 1;  // Buy signal - %K crossed above %D in oversold region
+    else if(k_buffer[0] < d_buffer[0] && k_buffer[1] >= d_buffer[1] && k_buffer[0] > 80)
+        return -1; // Sell signal - %K crossed below %D in overbought region
+    
+    return 0;      // Neutral
+}
+
+int CheckADX(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_adx = iADX(NULL, timeframe, 14);
+    
+    if(handle_adx == INVALID_HANDLE)
+        return 0;
+    
+    double adx_buffer[2];
+    double di_plus_buffer[2];
+    double di_minus_buffer[2];
+    
+    if(CopyBuffer(handle_adx, 0, 0, 2, adx_buffer) <= 0 ||
+       CopyBuffer(handle_adx, 1, 0, 2, di_plus_buffer) <= 0 ||
+       CopyBuffer(handle_adx, 2, 0, 2, di_minus_buffer) <= 0)
+    {
+        IndicatorRelease(handle_adx);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_adx);
+    
+    if(adx_buffer[0] > 25)
+    {
+        if(di_plus_buffer[0] > di_minus_buffer[0] && di_plus_buffer[1] <= di_minus_buffer[1])
+            return 1;  // Buy signal - +DI crossed above -DI with strong trend
+        else if(di_minus_buffer[0] > di_plus_buffer[0] && di_minus_buffer[1] <= di_plus_buffer[1])
+            return -1; // Sell signal - -DI crossed above +DI with strong trend
+        else if(di_plus_buffer[0] > di_minus_buffer[0])
+            return 1;  // Buy signal - +DI above -DI with strong trend
+        else if(di_minus_buffer[0] > di_plus_buffer[0])
+            return -1; // Sell signal - -DI above +DI with strong trend
+    }
+    
+    return 0;      // Neutral - Weak trend or no clear signal
+}
+
+int CheckParabolicSAR(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_psar = iSAR(NULL, timeframe, 0.02, 0.2);
+    
+    if(handle_psar == INVALID_HANDLE)
+        return 0;
+    
+    double psar_buffer[2];
+    double close_buffer[2];
+    
+    if(CopyBuffer(handle_psar, 0, 0, 2, psar_buffer) <= 0 ||
+       CopyClose(NULL, timeframe, 0, 2, close_buffer) <= 0)
+    {
+        IndicatorRelease(handle_psar);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_psar);
+    
+    if(close_buffer[0] > psar_buffer[0] && close_buffer[1] <= psar_buffer[1])
+        return 1;  // Buy signal - Price crossed above PSAR
+    else if(close_buffer[0] < psar_buffer[0] && close_buffer[1] >= psar_buffer[1])
+        return -1; // Sell signal - Price crossed below PSAR
+    else if(close_buffer[0] > psar_buffer[0])
+        return 1;  // Buy signal - Price above PSAR
+    else if(close_buffer[0] < psar_buffer[0])
+        return -1; // Sell signal - Price below PSAR
+    
+    return 0;      // Neutral
+}
+
+int CheckIchimoku(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_ichimoku = iIchimoku(NULL, timeframe, 9, 26, 52);
+    
+    if(handle_ichimoku == INVALID_HANDLE)
+        return 0;
+    
+    double tenkan_buffer[1];
+    double kijun_buffer[1];
+    double senkou_a_buffer[1];
+    double senkou_b_buffer[1];
+    double close_buffer[1];
+    
+    if(CopyBuffer(handle_ichimoku, 0, 0, 1, tenkan_buffer) <= 0 ||    // Tenkan-sen
+       CopyBuffer(handle_ichimoku, 1, 0, 1, kijun_buffer) <= 0 ||      // Kijun-sen
+       CopyBuffer(handle_ichimoku, 2, 0, 1, senkou_a_buffer) <= 0 ||   // Senkou Span A
+       CopyBuffer(handle_ichimoku, 3, 0, 1, senkou_b_buffer) <= 0 ||    // Senkou Span B
+       CopyClose(NULL, timeframe, 0, 1, close_buffer) <= 0)
+    {
+        IndicatorRelease(handle_ichimoku);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_ichimoku);
+    
+    // Check for Kumo breakout
+    if(close_buffer[0] > MathMax(senkou_a_buffer[0], senkou_b_buffer[0]))
+        return 1;  // Buy signal - Price above Kumo (cloud)
+    else if(close_buffer[0] < MathMin(senkou_a_buffer[0], senkou_b_buffer[0]))
+        return -1; // Sell signal - Price below Kumo (cloud)
+    
+    // Check for TK cross
+    if(tenkan_buffer[0] > kijun_buffer[0])
+        return 1;  // Buy signal - Tenkan-sen above Kijun-sen
+    else if(tenkan_buffer[0] < kijun_buffer[0])
+        return -1; // Sell signal - Tenkan-sen below Kijun-sen
+    
+    return 0;      // Neutral
+}
+
+int CheckCCI(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_cci = iCCI(NULL, timeframe, 14, PRICE_TYPICAL);
+    
+    if(handle_cci == INVALID_HANDLE)
+        return 0;
+    
+    double cci_buffer[2];
+    
+    if(CopyBuffer(handle_cci, 0, 0, 2, cci_buffer) <= 0)
+    {
+        IndicatorRelease(handle_cci);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_cci);
+    
+    if(cci_buffer[0] < -100 && cci_buffer[1] <= -100)
+        return 1;  // Buy signal - CCI below -100 (oversold)
+    else if(cci_buffer[0] > 100 && cci_buffer[1] >= 100)
+        return -1; // Sell signal - CCI above 100 (overbought)
+    else if(cci_buffer[0] < -100 && cci_buffer[1] > -100)
+        return 1;  // Buy signal - CCI crossed below -100
+    else if(cci_buffer[0] > 100 && cci_buffer[1] < 100)
+        return -1; // Sell signal - CCI crossed above 100
+    
+    return 0;      // Neutral
+}
+
+int CheckVolume(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_ma_volume = iMA(NULL, timeframe, 20, 0, MODE_SMA, PRICE_CLOSE);
+    
+    if(handle_ma_volume == INVALID_HANDLE)
+        return 0;
+    
+    double ma_volume_buffer[1];
+    long volume_buffer[2];
+    
+    if(CopyTickVolume(NULL, timeframe, 0, 2, volume_buffer) <= 0)
+    {
+        IndicatorRelease(handle_ma_volume);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_ma_volume);
+    
+    if(volume_buffer[0] > (long)(volume_buffer[1] * 1.5))
+        return 1;  // Buy signal - Volume spike
+    else if(volume_buffer[0] < (long)(volume_buffer[1] * 0.5))
+        return -1; // Sell signal - Volume drop
+    
+    return 0;      // Neutral
+}
+
+int CheckWilliamsR(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_wpr = iWPR(NULL, timeframe, 14);
+    
+    if(handle_wpr == INVALID_HANDLE)
+        return 0;
+    
+    double wpr_buffer[2];
+    
+    if(CopyBuffer(handle_wpr, 0, 0, 2, wpr_buffer) <= 0)
+    {
+        IndicatorRelease(handle_wpr);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_wpr);
+    
+    if(wpr_buffer[0] < -80 && wpr_buffer[1] <= -80)
+        return 1;  // Buy signal - Williams %R below -80 (oversold)
+    else if(wpr_buffer[0] > -20 && wpr_buffer[1] >= -20)
+        return -1; // Sell signal - Williams %R above -20 (overbought)
+    else if(wpr_buffer[0] < -80 && wpr_buffer[1] > -80)
+        return 1;  // Buy signal - Williams %R crossed below -80
+    else if(wpr_buffer[0] > -20 && wpr_buffer[1] < -20)
+        return -1; // Sell signal - Williams %R crossed above -20
+    
+    return 0;      // Neutral
+}
+
+int CheckMomentum(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_mom = iMomentum(NULL, timeframe, 14, PRICE_CLOSE);
+    
+    if(handle_mom == INVALID_HANDLE)
+        return 0;
+    
+    double mom_buffer[2];
+    
+    if(CopyBuffer(handle_mom, 0, 0, 2, mom_buffer) <= 0)
+    {
+        IndicatorRelease(handle_mom);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_mom);
+    
+    if(mom_buffer[0] > 100 && mom_buffer[1] <= 100)
+        return 1;  // Buy signal - Momentum crossed above 100
+    else if(mom_buffer[0] < 100 && mom_buffer[1] >= 100)
+        return -1; // Sell signal - Momentum crossed below 100
+    else if(mom_buffer[0] > mom_buffer[1])
+        return 1;  // Buy signal - Momentum rising
+    else if(mom_buffer[0] < mom_buffer[1])
+        return -1; // Sell signal - Momentum falling
+    
+    return 0;      // Neutral
+}
+
+int CheckAwesomeOscillator(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_ao = iAO(NULL, timeframe);
+    
+    if(handle_ao == INVALID_HANDLE)
+        return 0;
+    
+    double ao_buffer[3];
+    
+    if(CopyBuffer(handle_ao, 0, 0, 3, ao_buffer) <= 0)
+    {
+        IndicatorRelease(handle_ao);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_ao);
+    
+    if(ao_buffer[0] > 0 && ao_buffer[1] < 0)
+        return 1;  // Buy signal - AO crossed above zero
+    else if(ao_buffer[0] < 0 && ao_buffer[1] > 0)
+        return -1; // Sell signal - AO crossed below zero
+    else if(ao_buffer[0] > 0 && ao_buffer[0] > ao_buffer[1] && ao_buffer[1] < ao_buffer[2])
+        return 1;  // Buy signal - Saucer pattern (bullish)
+    else if(ao_buffer[0] < 0 && ao_buffer[0] < ao_buffer[1] && ao_buffer[1] > ao_buffer[2])
+        return -1; // Sell signal - Saucer pattern (bearish)
+    
+    return 0;      // Neutral
+}
+
+int CheckATR(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_atr = iATR(NULL, timeframe, 14);
+    
+    if(handle_atr == INVALID_HANDLE)
+        return 0;
+    
+    double atr_buffer[2];
+    double avg_atr_buffer[5];
+    
+    if(CopyBuffer(handle_atr, 0, 0, 2, atr_buffer) <= 0 ||
+       CopyBuffer(handle_atr, 0, 0, 5, avg_atr_buffer) <= 0)
+    {
+        IndicatorRelease(handle_atr);
+        return 0;
+    }
+    
+    // Calculate average ATR over last 5 bars for comparison
+    double avg_atr = 0;
+    for(int i = 0; i < 5; i++)
+        avg_atr += avg_atr_buffer[i];
+    avg_atr /= 5;
+    
+    IndicatorRelease(handle_atr);
+    
+    if(atr_buffer[0] > avg_atr * 1.5)
+        return 1;  // Buy signal - Volatility spike
+    else if(atr_buffer[0] < avg_atr * 0.5)
+        return -1; // Sell signal - Volatility decline
+    
+    return 0;      // Neutral
+}
+
+int CheckDeMarker(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_demarker = iDeMarker(NULL, timeframe, 14);
+    
+    if(handle_demarker == INVALID_HANDLE)
+        return 0;
+    
+    double demarker_buffer[2];
+    
+    if(CopyBuffer(handle_demarker, 0, 0, 2, demarker_buffer) <= 0)
+    {
+        IndicatorRelease(handle_demarker);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_demarker);
+    
+    if(demarker_buffer[0] < 0.3 && demarker_buffer[1] <= 0.3)
+        return 1;  // Buy signal - DeMarker below 0.3 (oversold)
+    else if(demarker_buffer[0] > 0.7 && demarker_buffer[1] >= 0.7)
+        return -1; // Sell signal - DeMarker above 0.7 (overbought)
+    else if(demarker_buffer[0] < 0.3 && demarker_buffer[1] > 0.3)
+        return 1;  // Buy signal - DeMarker crossed below 0.3
+    else if(demarker_buffer[0] > 0.7 && demarker_buffer[1] < 0.7)
+        return -1; // Sell signal - DeMarker crossed above 0.7
+    
+    return 0;      // Neutral
+}
+
+int CheckMFI(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_mfi = iMFI(NULL, timeframe, 14, VOLUME_TICK);
+    
+    if(handle_mfi == INVALID_HANDLE)
+        return 0;
+    
+    double mfi_buffer[2];
+    
+    if(CopyBuffer(handle_mfi, 0, 0, 2, mfi_buffer) <= 0)
+    {
+        IndicatorRelease(handle_mfi);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_mfi);
+    
+    if(mfi_buffer[0] < 20 && mfi_buffer[1] <= 20)
+        return 1;  // Buy signal - MFI below 20 (oversold)
+    else if(mfi_buffer[0] > 80 && mfi_buffer[1] >= 80)
+        return -1; // Sell signal - MFI above 80 (overbought)
+    else if(mfi_buffer[0] < 20 && mfi_buffer[1] > 20)
+        return 1;  // Buy signal - MFI crossed below 20
+    else if(mfi_buffer[0] > 80 && mfi_buffer[1] < 80)
+        return -1; // Sell signal - MFI crossed above 80
+    
+    return 0;      // Neutral
+}
+
+int CheckBearsPower(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_bears = iBearsPower(NULL, timeframe, 13);
+    
+    if(handle_bears == INVALID_HANDLE)
+        return 0;
+    
+    double bears_buffer[2];
+    
+    if(CopyBuffer(handle_bears, 0, 0, 2, bears_buffer) <= 0)
+    {
+        IndicatorRelease(handle_bears);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_bears);
+    
+    if(bears_buffer[0] > 0 && bears_buffer[1] <= 0)
+        return 1;  // Buy signal - Bears Power crossed above zero
+    else if(bears_buffer[0] < 0 && bears_buffer[1] >= 0)
+        return -1; // Sell signal - Bears Power crossed below zero
+    else if(bears_buffer[0] > bears_buffer[1] && bears_buffer[0] < 0)
+        return 1;  // Buy signal - Bears Power rising while below zero
+    
+    return 0;      // Neutral
+}
+
+int CheckBullsPower(ENUM_TIMEFRAMES timeframe)
+{
+    int handle_bulls = iBullsPower(NULL, timeframe, 13);
+    
+    if(handle_bulls == INVALID_HANDLE)
+        return 0;
+    
+    double bulls_buffer[2];
+    
+    if(CopyBuffer(handle_bulls, 0, 0, 2, bulls_buffer) <= 0)
+    {
+        IndicatorRelease(handle_bulls);
+        return 0;
+    }
+    
+    IndicatorRelease(handle_bulls);
+    
+    if(bulls_buffer[0] > 0 && bulls_buffer[1] <= 0)
+        return 1;  // Buy signal - Bulls Power crossed above zero
+    else if(bulls_buffer[0] < 0 && bulls_buffer[1] >= 0)
+        return -1; // Sell signal - Bulls Power crossed below zero
+    else if(bulls_buffer[0] < bulls_buffer[1] && bulls_buffer[0] > 0)
+        return -1; // Sell signal - Bulls Power falling while above zero
+    
+    return 0;      // Neutral
+}
+
+//+------------------------------------------------------------------+
+//| Create the panel                                                 |
+//+------------------------------------------------------------------+
+void CreatePanel()
+{
+    // Delete existing objects
+    ObjectsDeleteAll(0, indicator_name);
+    
+    // Create background
+    CreateRectangleLabel(indicator_name + "_bg", panel_x_pos, panel_y_pos, panel_width, 500, clrBlack, clrNONE, 1);
+    
+    // Create timeframe buttons
+    if(showTimeframeButtons)
+    {
+        int button_width = panel_width / ArraySize(timeframes);
+        for(int i = 0; i < ArraySize(timeframes); i++)
+        {
+            CreateButton(indicator_name + "_tf_" + IntegerToString(i), 
+                          timeframe_labels[i], 
+                          panel_x_pos + i * button_width, 
+                          panel_y_pos + 5, 
+                          button_width, 
+                          30, 
+                          (i == selected_timeframe_index) ? clrWhite : clrGray, 
+                          (i == selected_timeframe_index) ? clrBlack : clrWhite, 
+                          7);
+        }
+    }
+    
+    // Create summary section
+    int y_pos = panel_y_pos + (showTimeframeButtons ? 50 : 10);
+    CreateText(indicator_name + "_summary_label", "Summary", panel_x_pos + panel_width/2, y_pos, 12, clrWhite, true);
+    
+    // Create summary gauge
+    y_pos += 30;
+    CreateGauge(indicator_name + "_summary_gauge", 
+                panel_x_pos + panel_width/2, 
+                y_pos, 
+                panel_width - 20, 
+                "Strong sell", 
+                "Sell", 
+                "Neutral", 
+                "Buy", 
+                "Strong buy", 
+                sellColor, 
+                neutralColor, 
+                buyColor);
+    
+    // Create summary text
+    y_pos += 50;
+    CreateText(indicator_name + "_summary_text", "Neutral", panel_x_pos + panel_width/2, y_pos, 12, clrWhite, true);
+    
+    // Create signal counter
+    y_pos += 30;
+    int counter_width = panel_width / 3;
+    CreateText(indicator_name + "_sell_counter_label", "Sell", panel_x_pos + counter_width/2, y_pos, 10, sellColor, true);
+    CreateText(indicator_name + "_neutral_counter_label", "Neutral", panel_x_pos + panel_width/2, y_pos, 10, neutralColor, true);
+    CreateText(indicator_name + "_buy_counter_label", "Buy", panel_x_pos + panel_width - counter_width/2, y_pos, 10, buyColor, true);
+    
+    y_pos += 20;
+    CreateText(indicator_name + "_sell_counter", "0", panel_x_pos + counter_width/2, y_pos, 12, sellColor, true);
+    CreateText(indicator_name + "_neutral_counter", "0", panel_x_pos + panel_width/2, y_pos, 12, neutralColor, true);
+    CreateText(indicator_name + "_buy_counter", "0", panel_x_pos + panel_width - counter_width/2, y_pos, 12, buyColor, true);
+    
+    // Create oscillators section
+    y_pos += 30;
+    CreateText(indicator_name + "_oscillators_label", "Oscillators", panel_x_pos + panel_width/2, y_pos, 12, clrWhite, true);
+    
+    // Create oscillators gauge
+    y_pos += 30;
+    CreateGauge(indicator_name + "_oscillators_gauge", 
+                panel_x_pos + panel_width/2, 
+                y_pos, 
+                panel_width - 20, 
+                "Strong sell", 
+                "Sell", 
+                "Neutral", 
+                "Buy", 
+                "Strong buy", 
+                sellColor, 
+                neutralColor, 
+                buyColor);
+    
+    // Create oscillators text
+    y_pos += 50;
+    CreateText(indicator_name + "_oscillators_text", "Neutral", panel_x_pos + panel_width/2, y_pos, 12, clrWhite, true);
+    
+    // Create oscillators counter
+    y_pos += 30;
+    CreateText(indicator_name + "_osc_sell_counter_label", "Sell", panel_x_pos + counter_width/2, y_pos, 10, sellColor, true);
+    CreateText(indicator_name + "_osc_neutral_counter_label", "Neutral", panel_x_pos + panel_width/2, y_pos, 10, neutralColor, true);
+    CreateText(indicator_name + "_osc_buy_counter_label", "Buy", panel_x_pos + panel_width - counter_width/2, y_pos, 10, buyColor, true);
+    
+    y_pos += 20;
+    CreateText(indicator_name + "_osc_sell_counter", "0", panel_x_pos + counter_width/2, y_pos, 12, sellColor, true);
+    CreateText(indicator_name + "_osc_neutral_counter", "0", panel_x_pos + panel_width/2, y_pos, 12, neutralColor, true);
+    CreateText(indicator_name + "_osc_buy_counter", "0", panel_x_pos + panel_width - counter_width/2, y_pos, 12, buyColor, true);
+    
+    // Create moving averages section
+    y_pos += 30;
+    CreateText(indicator_name + "_ma_label", "Moving Averages", panel_x_pos + panel_width/2, y_pos, 12, clrWhite, true);
+    
+    // Create moving averages gauge
+    y_pos += 30;
+    CreateGauge(indicator_name + "_ma_gauge", 
+                panel_x_pos + panel_width/2, 
+                y_pos, 
+                panel_width - 20, 
+                "Strong sell", 
+                "Sell", 
+                "Neutral", 
+                "Buy", 
+                "Strong buy", 
+                sellColor, 
+                neutralColor, 
+                buyColor);
+}
+
+//+------------------------------------------------------------------+
+//| Update the panel                                                 |
+//+------------------------------------------------------------------+
+void UpdatePanel()
+{
+    // Update summary counter
+    ObjectSetString(0, indicator_name + "_sell_counter", OBJPROP_TEXT, IntegerToString(sell_signals));
+    ObjectSetString(0, indicator_name + "_neutral_counter", OBJPROP_TEXT, IntegerToString(neutral_signals));
+    ObjectSetString(0, indicator_name + "_buy_counter", OBJPROP_TEXT, IntegerToString(buy_signals));
+    
+    // Update oscillators counter
+    ObjectSetString(0, indicator_name + "_osc_sell_counter", OBJPROP_TEXT, IntegerToString(osc_sell_signals));
+    ObjectSetString(0, indicator_name + "_osc_neutral_counter", OBJPROP_TEXT, IntegerToString(osc_neutral_signals));
+    ObjectSetString(0, indicator_name + "_osc_buy_counter", OBJPROP_TEXT, IntegerToString(osc_buy_signals));
+    
+    // Calculate summary signal
+    string summary_text = "Neutral";
+    color summary_color = neutralColor;
+    double summary_value = 0;
+    
+    int total_signals = sell_signals + neutral_signals + buy_signals;
+    if(total_signals > 0)
+    {
+        summary_value = (double)((buy_signals * 2 + neutral_signals) - (sell_signals * 2)) / (total_signals * 2);
+        summary_value = MathMax(-1, MathMin(1, summary_value)); // Normalize to [-1, 1]
+        
+        if(summary_value < -0.5)
+        {
+            summary_text = "Strong sell";
+            summary_color = sellColor;
+        }
+        else if(summary_value < 0)
+        {
+            summary_text = "Sell";
+            summary_color = sellColor;
+        }
+        else if(summary_value > 0.5)
+        {
+            summary_text = "Strong buy";
+            summary_color = buyColor;
+        }
+        else if(summary_value > 0)
+        {
+            summary_text = "Buy";
+            summary_color = buyColor;
+        }
+    }
+    
+    // Update summary text and gauge
+    ObjectSetString(0, indicator_name + "_summary_text", OBJPROP_TEXT, summary_text);
+    ObjectSetInteger(0, indicator_name + "_summary_text", OBJPROP_COLOR, summary_color);
+    UpdateGauge(indicator_name + "_summary_gauge", summary_value);
+    
+    // Calculate oscillators signal
+    string osc_text = "Neutral";
+    color osc_color = neutralColor;
+    double osc_value = 0;
+    
+    int total_osc_signals = osc_sell_signals + osc_neutral_signals + osc_buy_signals;
+    if(total_osc_signals > 0)
+    {
+        osc_value = (double)((osc_buy_signals * 2 + osc_neutral_signals) - (osc_sell_signals * 2)) / (total_osc_signals * 2);
+        osc_value = MathMax(-1, MathMin(1, osc_value)); // Normalize to [-1, 1]
+        
+        if(osc_value < -0.5)
+        {
+            osc_text = "Strong sell";
+            osc_color = sellColor;
+        }
+        else if(osc_value < 0)
+        {
+            osc_text = "Sell";
+            osc_color = sellColor;
+        }
+        else if(osc_value > 0.5)
+        {
+            osc_text = "Strong buy";
+            osc_color = buyColor;
+        }
+        else if(osc_value > 0)
+        {
+            osc_text = "Buy";
+            osc_color = buyColor;
+        }
+    }
+    
+    // Update oscillators text and gauge
+    ObjectSetString(0, indicator_name + "_oscillators_text", OBJPROP_TEXT, osc_text);
+    ObjectSetInteger(0, indicator_name + "_oscillators_text", OBJPROP_COLOR, osc_color);
+    UpdateGauge(indicator_name + "_oscillators_gauge", osc_value);
+    
+    ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
+//| Check timeframe button clicks                                    |
+//+------------------------------------------------------------------+
+void OnChartEvent(const int id,
+                 const long &lparam,
+                 const double &dparam,
+                 const string &sparam)
+{
+    // Check for object click
+    if(id == CHARTEVENT_OBJECT_CLICK)
+    {
+        // Check if a timeframe button was clicked
+        for(int i = 0; i < ArraySize(timeframes); i++)
+        {
+            if(sparam == indicator_name + "_tf_" + IntegerToString(i))
+            {
+                selected_timeframe_index = i;
+                
+                // Update button colors
+                for(int j = 0; j < ArraySize(timeframes); j++)
+                {
+                    ObjectSetInteger(0, indicator_name + "_tf_" + IntegerToString(j), OBJPROP_COLOR, 
+                                    (j == selected_timeframe_index) ? clrBlack : clrWhite);
+                    ObjectSetInteger(0, indicator_name + "_tf_" + IntegerToString(j), OBJPROP_BGCOLOR, 
+                                    (j == selected_timeframe_index) ? clrWhite : clrGray);
+                }
+                
+                // Recalculate signals
+                double close[];
+                if(CopyClose(NULL, (ENUM_TIMEFRAMES)timeframes[selected_timeframe_index], 0, 1, close) > 0)
+                {
+                    CalculateSignals(close);
+                    CalculateOscillators(close);
+                }
+                
+                // Update the panel
+                UpdatePanel();
+                
+                break;
+            }
+        }
+    }
+    
+    // Update panel position if chart size changes
+    if(id == CHARTEVENT_CHART_CHANGE)
+    {
+        panel_x_pos = (int)ChartGetInteger(0, CHART_WIDTH_IN_PIXELS) - panel_width - panelMargin;
+        CreatePanel();
+        UpdatePanel();
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Helper functions for creating UI elements                        |
+//+------------------------------------------------------------------+
+void CreateRectangleLabel(string name, int x, int y, int width, int height, color bg_color, color border_color, int border_width)
+{
+    ObjectCreate(0, name, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+    ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, name, OBJPROP_XSIZE, width);
+    ObjectSetInteger(0, name, OBJPROP_YSIZE, height);
+    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, bg_color);
+    ObjectSetInteger(0, name, OBJPROP_COLOR, border_color);
+    ObjectSetInteger(0, name, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+    ObjectSetInteger(0, name, OBJPROP_WIDTH, border_width);
+    ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+    ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_SOLID);
+    ObjectSetInteger(0, name, OBJPROP_BACK, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+    ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+    ObjectSetInteger(0, name, OBJPROP_ZORDER, 0);
+}
+
+void CreateButton(string name, string text, int x, int y, int width, int height, color bg_color, color text_color, int font_size)
+{
+    ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0);
+    ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, name, OBJPROP_XSIZE, width);
+    ObjectSetInteger(0, name, OBJPROP_YSIZE, height);
+    ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, bg_color);
+    ObjectSetInteger(0, name, OBJPROP_COLOR, text_color);
+    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, clrNONE);
+    ObjectSetInteger(0, name, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+    ObjectSetInteger(0, name, OBJPROP_BACK, false);
+    ObjectSetInteger(0, name, OBJPROP_STATE, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+    ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+    ObjectSetInteger(0, name, OBJPROP_ZORDER, 0);
+    ObjectSetString(0, name, OBJPROP_TEXT, text);
+    ObjectSetString(0, name, OBJPROP_FONT, "Arial");
+    ObjectSetInteger(0, name, OBJPROP_FONTSIZE, font_size);
+}
+
+void CreateText(string name, string text, int x, int y, int font_size, color text_color, bool centered)
+{
+    ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
+    ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, name, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+    ObjectSetInteger(0, name, OBJPROP_COLOR, text_color);
+    ObjectSetInteger(0, name, OBJPROP_BACK, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+    ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+    ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+    ObjectSetInteger(0, name, OBJPROP_ZORDER, 0);
+    ObjectSetString(0, name, OBJPROP_TEXT, text);
+    ObjectSetString(0, name, OBJPROP_FONT, "Arial");
+    ObjectSetInteger(0, name, OBJPROP_FONTSIZE, font_size);
+    
+    if(centered)
+        ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_CENTER);
+    else
+        ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
+}
+
+void CreateGauge(string name, int x, int y, int width, string level_1, string level_2, string level_3, string level_4, string level_5, color sell_color, color neutral_color, color buy_color)
+{
+    // Create background
+    CreateRectangleLabel(name + "_bg", x - width/2, y - 10, width, 20, clrBlack, clrNONE, 1);
+    
+    // Create gauge sectors
+    int sector_width = width / 5;
+    
+    // Strong sell sector
+    CreateRectangleLabel(name + "_sector_1", x - width/2, y - 10, sector_width, 20, sell_color, clrNONE, 1);
+    
+    // Sell sector
+    CreateRectangleLabel(name + "_sector_2", x - width/2 + sector_width, y - 10, sector_width, 20, sell_color, clrNONE, 1);
+    ObjectSetInteger(0, name + "_sector_2", OBJPROP_BGCOLOR, 
+                     ColorBlend(sell_color, neutral_color, 0.5));
+    
+    // Neutral sector
+    CreateRectangleLabel(name + "_sector_3", x - width/2 + sector_width*2, y - 10, sector_width, 20, neutral_color, clrNONE, 1);
+    
+    // Buy sector
+    CreateRectangleLabel(name + "_sector_4", x - width/2 + sector_width*3, y - 10, sector_width, 20, buy_color, clrNONE, 1);
+    ObjectSetInteger(0, name + "_sector_4", OBJPROP_BGCOLOR, 
+                     ColorBlend(neutral_color, buy_color, 0.5));
+    
+    // Strong buy sector
+    CreateRectangleLabel(name + "_sector_5", x - width/2 + sector_width*4, y - 10, sector_width, 20, buy_color, clrNONE, 1);
+    
+    // Create labels
+    CreateText(name + "_label_1", level_1, x - width/2 + sector_width/2, y - 25, 8, sell_color, true);
+    CreateText(name + "_label_2", level_2, x - width/2 + sector_width + sector_width/2, y - 25, 8, ColorBlend(sell_color, neutral_color, 0.5), true);
+    CreateText(name + "_label_3", level_3, x - width/2 + sector_width*2 + sector_width/2, y - 25, 8, neutral_color, true);
+    CreateText(name + "_label_4", level_4, x - width/2 + sector_width*3 + sector_width/2, y - 25, 8, ColorBlend(neutral_color, buy_color, 0.5), true);
+    CreateText(name + "_label_5", level_5, x - width/2 + sector_width*4 + sector_width/2, y - 25, 8, buy_color, true);
+    
+    // Create gauge needle
+    ObjectCreate(0, name + "_needle", OBJ_VLINE, 0, 0, 0);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_COLOR, clrWhite);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_STYLE, STYLE_SOLID);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_WIDTH, 2);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_BACK, false);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_SELECTABLE, false);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_SELECTED, false);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_HIDDEN, true);
+    ObjectSetInteger(0, name + "_needle", OBJPROP_ZORDER, 1);
+}
+
+void UpdateGauge(string name, double value)
+{
+    // Ensure value is in range [-1, 1]
+    value = MathMax(-1, MathMin(1, value));
+    
+    // Get gauge width
+    int width = ObjectGetInteger(0, name + "_bg", OBJPROP_XSIZE);
+    int x = ObjectGetInteger(0, name + "_bg", OBJPROP_XDISTANCE) + width/2;
+    
+    // Calculate needle position
+    int needle_x = x + (int)(value * width/2);
+    
+    // Update needle position
+    ObjectSetInteger(0, name + "_needle", OBJPROP_XDISTANCE, needle_x);
+}
+
+//+------------------------------------------------------------------+
+//| Blend two colors                                                 |
+//+------------------------------------------------------------------+
+color ColorBlend(color c1, color c2, double ratio)
+{
+    int r1 = c1 & 0xFF;
+    int g1 = (c1 >> 8) & 0xFF;
+    int b1 = (c1 >> 16) & 0xFF;
+    
+    int r2 = c2 & 0xFF;
+    int g2 = (c2 >> 8) & 0xFF;
+    int b2 = (c2 >> 16) & 0xFF;
+    
+    int r = r1 + (int)((r2 - r1) * ratio);
+    int g = g1 + (int)((g2 - g1) * ratio);
+    int b = b1 + (int)((b2 - b1) * ratio);
+    
+    return (color)((b << 16) | (g << 8) | r);
+}
+
+//+------------------------------------------------------------------+
+//| Indicator deinitialization function                              |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    ObjectsDeleteAll(0, indicator_name);
+    ChartRedraw();
+}
+//+------------------------------------------------------------------+
