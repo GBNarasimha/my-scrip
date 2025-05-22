@@ -1,0 +1,284 @@
+//+------------------------------------------------------------------+
+//|           Indian Standard Time and News Alert Indicator.mq5      |
+//|                                                                  |
+//|  Features:                                                       |
+//|  - Shows Indian Standard Time on chart (UTC+5:30)                |
+//|  - Displays candlestick time information                         |
+//|  - Multiple timeframe information                                |
+//|  - Economic news alerts 6 minutes before events                  |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025"
+#property link      ""
+#property version   "1.00"
+#property indicator_chart_window
+#property indicator_plots 0
+
+// Input parameters
+input color    TextColor = clrWhite;      // Text Color
+input int      TextSize = 10;             // Text Size
+input string   FontName = "Arial";        // Font Name
+input color    NewsAlertColor = clrRed;   // News Alert Color
+input bool     ShowIST = true;            // Show Indian Standard Time
+input bool     ShowCandleTime = true;     // Show Candle Time
+input bool     ShowMultiTimeframe = true; // Show Multi-Timeframe Info
+input bool     ShowNewsAlerts = true;     // Show News Alerts
+
+// Global variables
+int NewsHandle = 0;
+datetime LastAlertTime = 0;
+string DisplayText = "";
+string TimeframeInfo = "";
+string NewsInfo = "";
+
+// Timeframes to monitor
+ENUM_TIMEFRAMES Timeframes[] = {PERIOD_M1, PERIOD_M5, PERIOD_M15, PERIOD_H1, PERIOD_H4, PERIOD_D1};
+string TimeframeNames[] = {"M1", "M5", "M15", "H1", "H4", "D1"};
+
+// News event structure
+struct NewsEvent
+{
+   datetime time;
+   string currency;
+   string event;
+   int impact;
+};
+
+NewsEvent NewsEvents[];
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Create text objects
+   ObjectCreate(0, "IST_Time", OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, "IST_Time", OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, "IST_Time", OBJPROP_XDISTANCE, 10);
+   ObjectSetInteger(0, "IST_Time", OBJPROP_YDISTANCE, 20);
+   ObjectSetInteger(0, "IST_Time", OBJPROP_COLOR, TextColor);
+   ObjectSetInteger(0, "IST_Time", OBJPROP_FONTSIZE, TextSize);
+   ObjectSetString(0, "IST_Time", OBJPROP_FONT, FontName);
+
+   ObjectCreate(0, "Candle_Time", OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, "Candle_Time", OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, "Candle_Time", OBJPROP_XDISTANCE, 10);
+   ObjectSetInteger(0, "Candle_Time", OBJPROP_YDISTANCE, 40);
+   ObjectSetInteger(0, "Candle_Time", OBJPROP_COLOR, TextColor);
+   ObjectSetInteger(0, "Candle_Time", OBJPROP_FONTSIZE, TextSize);
+   ObjectSetString(0, "Candle_Time", OBJPROP_FONT, FontName);
+
+   ObjectCreate(0, "MTF_Info", OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, "MTF_Info", OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, "MTF_Info", OBJPROP_XDISTANCE, 10);
+   ObjectSetInteger(0, "MTF_Info", OBJPROP_YDISTANCE, 60);
+   ObjectSetInteger(0, "MTF_Info", OBJPROP_COLOR, TextColor);
+   ObjectSetInteger(0, "MTF_Info", OBJPROP_FONTSIZE, TextSize);
+   ObjectSetString(0, "MTF_Info", OBJPROP_FONT, FontName);
+
+   ObjectCreate(0, "News_Alert", OBJ_LABEL, 0, 0, 0);
+   ObjectSetInteger(0, "News_Alert", OBJPROP_CORNER, CORNER_LEFT_UPPER);
+   ObjectSetInteger(0, "News_Alert", OBJPROP_XDISTANCE, 10);
+   ObjectSetInteger(0, "News_Alert", OBJPROP_YDISTANCE, 80);
+   ObjectSetInteger(0, "News_Alert", OBJPROP_COLOR, NewsAlertColor);
+   ObjectSetInteger(0, "News_Alert", OBJPROP_FONTSIZE, TextSize);
+   ObjectSetString(0, "News_Alert", OBJPROP_FONT, FontName);
+
+   // Load sample news events for demonstration
+   // In a real implementation, you would fetch this from a news API or feed
+   LoadSampleNewsEvents();
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Load sample news events for demonstration                        |
+//+------------------------------------------------------------------+
+void LoadSampleNewsEvents()
+{
+   // Clear existing events
+   ArrayResize(NewsEvents, 0);
+   
+   // Current time
+   datetime currentTime = TimeCurrent();
+   
+   // Add sample events (in a real implementation, these would come from an API)
+   AddNewsEvent(currentTime + 600, "USD", "US Non-Farm Payrolls", 3);
+   AddNewsEvent(currentTime + 900, "EUR", "ECB Interest Rate Decision", 3);
+   AddNewsEvent(currentTime + 1200, "INR", "India CPI Data", 2);
+   AddNewsEvent(currentTime + 1500, "USD", "FOMC Meeting Minutes", 3);
+   AddNewsEvent(currentTime + 1800, "JPY", "Japan GDP Data", 2);
+}
+
+//+------------------------------------------------------------------+
+//| Add a news event to the array                                    |
+//+------------------------------------------------------------------+
+void AddNewsEvent(datetime time, string currency, string event_name, int impact)
+{
+   int size = ArraySize(NewsEvents);
+   ArrayResize(NewsEvents, size + 1);
+   
+   NewsEvents[size].time = time;
+   NewsEvents[size].currency = currency;
+   NewsEvents[size].event = event_name;
+   NewsEvents[size].impact = impact;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator deinitialization function                        |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   ObjectDelete(0, "IST_Time");
+   ObjectDelete(0, "Candle_Time");
+   ObjectDelete(0, "MTF_Info");
+   ObjectDelete(0, "News_Alert");
+}
+
+//+------------------------------------------------------------------+
+//| Convert local time to Indian Standard Time (UTC+5:30)             |
+//+------------------------------------------------------------------+
+string GetIndianStandardTime()
+{
+   datetime serverTime = TimeCurrent();
+   datetime localTime = TimeLocal();
+   
+   // Calculate the time difference between server and local
+   int timeDiff = (int)(serverTime - localTime);
+   
+   // Calculate Indian Standard Time (UTC+5:30)
+   // Convert 5:30 to seconds: 5*3600 + 30*60 = 19800 seconds
+   datetime istTime = serverTime + 19800 - timeDiff;
+   
+   string istTimeStr = TimeToString(istTime, TIME_DATE | TIME_SECONDS);
+   return "IST: " + istTimeStr;
+}
+
+//+------------------------------------------------------------------+
+//| Get candle time information                                      |
+//+------------------------------------------------------------------+
+string GetCandleTimeInfo()
+{
+   datetime currentTime = TimeCurrent();
+   datetime candleTime = iTime(_Symbol, Period(), 0);
+   
+   int secondsLeft = (int)(candleTime + PeriodSeconds(Period()) - currentTime);
+   
+   int minutes = secondsLeft / 60;
+   int seconds = secondsLeft % 60;
+   
+   return "Candle closes in: " + IntegerToString(minutes) + "m " + IntegerToString(seconds) + "s";
+}
+
+//+------------------------------------------------------------------+
+//| Get multi-timeframe information                                  |
+//+------------------------------------------------------------------+
+string GetMultiTimeframeInfo()
+{
+   string info = "MTF Info: ";
+   
+   for(int i=0; i<ArraySize(Timeframes); i++)
+   {
+      datetime candleTime = iTime(_Symbol, Timeframes[i], 0);
+      datetime nextCandleTime = candleTime + PeriodSeconds(Timeframes[i]);
+      int timeLeft = (int)(nextCandleTime - TimeCurrent());
+      
+      if(timeLeft > 0)
+      {
+         int minutes = timeLeft / 60;
+         int seconds = timeLeft % 60;
+         info += TimeframeNames[i] + ": " + IntegerToString(minutes) + "m" + IntegerToString(seconds) + "s ";
+      }
+   }
+   
+   return info;
+}
+
+//+------------------------------------------------------------------+
+//| Check for upcoming news events                                   |
+//+------------------------------------------------------------------+
+string CheckNewsEvents()
+{
+   datetime currentTime = TimeCurrent();
+   string alertText = "";
+   
+   for(int i=0; i<ArraySize(NewsEvents); i++)
+   {
+      // Check if event is within 6 minutes (360 seconds)
+      int timeUntilEvent = (int)(NewsEvents[i].time - currentTime);
+      
+      if(timeUntilEvent > 0 && timeUntilEvent <= 360)
+      {
+         int minutesLeft = timeUntilEvent / 60;
+         string impactStars = "";
+         
+         // Create stars based on impact
+         for(int s=0; s<NewsEvents[i].impact; s++)
+            impactStars += "*";
+            
+         // Only display if we haven't alerted about this specific event already
+         if(NewsEvents[i].time != LastAlertTime)
+         {
+            alertText += "NEWS ALERT (" + IntegerToString(minutesLeft) + "m): " + 
+                         NewsEvents[i].currency + " " + NewsEvents[i].event + " " + impactStars + "\n";
+            LastAlertTime = NewsEvents[i].time;
+         }
+      }
+   }
+   
+   return alertText;
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Update the text objects
+   if(ShowIST)
+   {
+      ObjectSetString(0, "IST_Time", OBJPROP_TEXT, GetIndianStandardTime());
+   }
+   else
+   {
+      ObjectSetString(0, "IST_Time", OBJPROP_TEXT, "");
+   }
+   
+   if(ShowCandleTime)
+   {
+      ObjectSetString(0, "Candle_Time", OBJPROP_TEXT, GetCandleTimeInfo());
+   }
+   else
+   {
+      ObjectSetString(0, "Candle_Time", OBJPROP_TEXT, "");
+   }
+   
+   if(ShowMultiTimeframe)
+   {
+      ObjectSetString(0, "MTF_Info", OBJPROP_TEXT, GetMultiTimeframeInfo());
+   }
+   else
+   {
+      ObjectSetString(0, "MTF_Info", OBJPROP_TEXT, "");
+   }
+   
+   if(ShowNewsAlerts)
+   {
+      ObjectSetString(0, "News_Alert", OBJPROP_TEXT, CheckNewsEvents());
+   }
+   else
+   {
+      ObjectSetString(0, "News_Alert", OBJPROP_TEXT, "");
+   }
+   
+   ChartRedraw();
+   return(rates_total);
+}
