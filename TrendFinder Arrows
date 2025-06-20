@@ -1,0 +1,422 @@
+//+------------------------------------------------------------------+
+//|                                                 TrendFinder.mq5 |
+//|                                  Copyright 2025, MetaQuotes Ltd. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#property indicator_chart_window
+#property indicator_buffers 0
+#property indicator_plots   0
+
+//--- Input parameters
+input double ATRwithTrendFactor = 4.5;         // ATR with trend factor
+input double ATRagainstTrendFactor = 1.5;      // ATR against trend factor
+input int    ATRperiod = 14;                   // ATR period
+input color  ColorStartUpTrend = clrGreen;     // Start Up Trend Color
+input color  ColorStartDownTrend = clrRed;     // Start Down Trend Color
+input color  ColorEndTrend = clrPurple;        // End Trend Color
+input color  ColorBoth = clrGray;              // Color when start and end trend are the same
+input bool   ShowLabels = true;                // Show text labels
+input bool   ShowArrows = true;                // Show arrow indicators
+input int    ArrowSize = 3;                    // Arrow size (1-5)
+input int    ArrowUpCode = 233;                // Arrow up code (wingdings)
+input int    ArrowDownCode = 234;              // Arrow down code (wingdings)
+
+//--- Global variables
+bool endTrend = false;
+double fullTrendChecker = 0.0;
+double counterTrendChecker = 0.1;
+bool UpTrend = false;
+bool DownTrend = false;
+datetime StartTrendBarTime = 0;
+datetime EndTrendBarTime = 0;
+datetime previous_EndTrendBarTime = 0;
+double EndTrendClose = 0.0;
+bool reversal = false;
+double endTrendATR = 0.0;
+double startTrendATR = 0.0;
+double upWick = 0.0;
+double downWick = 0.0;
+
+//--- ATR handle
+int atr_handle;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    //--- Create ATR indicator
+    atr_handle = iATR(_Symbol, _Period, ATRperiod);
+    if(atr_handle == INVALID_HANDLE)
+    {
+        Print("Failed to create ATR indicator");
+        return(INIT_FAILED);
+    }
+    
+    //--- Initialize variables
+    endTrend = false;
+    fullTrendChecker = 0.0;
+    counterTrendChecker = 0.1;
+    UpTrend = false;
+    DownTrend = false;
+    reversal = false;
+    endTrendATR = 0.0;
+    startTrendATR = 0.0;
+    
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+    //--- Check if we have enough bars
+    if(rates_total < ATRperiod + 2)
+        return(0);
+    
+    //--- Get ATR values
+    double atr_buffer[];
+    ArraySetAsSeries(atr_buffer, true);
+    if(CopyBuffer(atr_handle, 0, 0, rates_total, atr_buffer) <= 0)
+        return(0);
+    
+    //--- Set arrays as series
+    ArraySetAsSeries(time, true);
+    ArraySetAsSeries(open, true);
+    ArraySetAsSeries(high, true);
+    ArraySetAsSeries(low, true);
+    ArraySetAsSeries(close, true);
+    
+    //--- Main calculation loop
+    int start = MathMax(prev_calculated - 1, 1);
+    
+    for(int i = start; i < rates_total - 1; i++)
+    {
+        int bar_index = rates_total - 1 - i;
+        
+        //--- Skip if not enough data
+        if(bar_index < 1) continue;
+        
+        //--- Calculate trend checker
+        if(bar_index > 1)
+        {
+            fullTrendChecker += close[bar_index] - close[bar_index + 1];
+        }
+        
+        //--- Handle uptrend reversal detection
+        if(UpTrend && reversal)
+        {
+            counterTrendChecker += close[bar_index] - close[bar_index + 1];
+        }
+        else if(UpTrend && close[bar_index] - close[bar_index + 1] < 0.0 && MathAbs(counterTrendChecker - 0.1) < 0.001)
+        {
+            counterTrendChecker = close[bar_index] - close[bar_index + 1];
+            EndTrendBarTime = time[bar_index + 1];
+            reversal = true;
+            EndTrendClose = close[bar_index + 1];
+            endTrend = true;
+        }
+        
+        //--- Handle downtrend reversal detection
+        if(DownTrend && reversal)
+        {
+            counterTrendChecker += close[bar_index] - close[bar_index + 1];
+        }
+        else if(DownTrend && close[bar_index] - close[bar_index + 1] > 0.0 && MathAbs(counterTrendChecker + 0.1) < 0.001)
+        {
+            counterTrendChecker = close[bar_index] - close[bar_index + 1];
+            EndTrendBarTime = time[bar_index + 1];
+            reversal = true;
+            EndTrendClose = close[bar_index + 1];
+            endTrend = true;
+        }
+        
+        //--- Update end trend ATR
+        if(endTrend)
+        {
+            endTrendATR = atr_buffer[bar_index + 1];
+            endTrend = false;
+        }
+        
+        //--- Calculate wicks
+        if(bar_index > 1)
+        {
+            if(close[bar_index] - close[bar_index + 1] > 0.0)
+                upWick = high[bar_index] - close[bar_index];
+            else
+                upWick = high[bar_index] - close[bar_index];
+                
+            if(close[bar_index] - close[bar_index + 1] < 0.0)
+                downWick = low[bar_index] - close[bar_index];
+            else
+                downWick = low[bar_index] - close[bar_index];
+        }
+        
+        //--- Check for downtrend end (upward reversal)
+        if(counterTrendChecker + upWick >= (ATRagainstTrendFactor * endTrendATR) && DownTrend)
+        {
+            fullTrendChecker += (EndTrendClose - close[bar_index]);
+            
+            if(fullTrendChecker <= -ATRwithTrendFactor * startTrendATR)
+            {
+                //--- Create markers for trend
+                string start_name = "TrendStart_" + TimeToString(StartTrendBarTime);
+                string end_name = "TrendEnd_" + TimeToString(EndTrendBarTime);
+                
+                double start_price = GetCloseAtTime(StartTrendBarTime, time, close, rates_total);
+                double end_price = GetCloseAtTime(EndTrendBarTime, time, close, rates_total);
+                
+                if(StartTrendBarTime == previous_EndTrendBarTime)
+                {
+                    // Combined start and end
+                    if(ShowLabels)
+                    {
+                        CreateTrendLabel(start_name + "_Label", StartTrendBarTime, start_price, 
+                                       "Start Down and End Up Trend", ColorBoth, ANCHOR_UPPER);
+                        CreateTrendLabel(end_name + "_Label", EndTrendBarTime, end_price, 
+                                       "End Down Trend", ColorEndTrend, ANCHOR_LOWER);
+                    }
+                    if(ShowArrows)
+                    {
+                        CreateTrendArrow(start_name + "_Arrow", StartTrendBarTime, start_price, 
+                                       ArrowDownCode, ColorBoth, true);
+                        CreateTrendArrow(end_name + "_Arrow", EndTrendBarTime, end_price, 
+                                       ArrowUpCode, ColorEndTrend, false);
+                    }
+                }
+                else
+                {
+                    // Separate start and end
+                    if(ShowLabels)
+                    {
+                        CreateTrendLabel(start_name + "_Label", StartTrendBarTime, start_price, 
+                                       "Start Down Trend", ColorStartDownTrend, ANCHOR_UPPER);
+                        CreateTrendLabel(end_name + "_Label", EndTrendBarTime, end_price, 
+                                       "End Down Trend", ColorEndTrend, ANCHOR_LOWER);
+                    }
+                    if(ShowArrows)
+                    {
+                        CreateTrendArrow(start_name + "_Arrow", StartTrendBarTime, start_price, 
+                                       ArrowDownCode, ColorStartDownTrend, true);
+                        CreateTrendArrow(end_name + "_Arrow", EndTrendBarTime, end_price, 
+                                       ArrowUpCode, ColorEndTrend, false);
+                    }
+                }
+                previous_EndTrendBarTime = EndTrendBarTime;
+            }
+            
+            //--- Reset for new trend
+            if(counterTrendChecker < 0.0)
+            {
+                StartTrendBarTime = time[bar_index + 1];
+                startTrendATR = atr_buffer[bar_index + 1];
+                fullTrendChecker = close[bar_index] - open[bar_index];
+                counterTrendChecker = -0.1;
+                reversal = false;
+            }
+            else
+            {
+                StartTrendBarTime = EndTrendBarTime;
+                startTrendATR = endTrendATR;
+                fullTrendChecker = counterTrendChecker;
+                counterTrendChecker = 0.1;
+                UpTrend = true;
+                DownTrend = false;
+                reversal = false;
+            }
+        }
+        
+        //--- Check for uptrend end (downward reversal)
+        else if(counterTrendChecker + downWick <= -(ATRagainstTrendFactor * endTrendATR) && UpTrend)
+        {
+            fullTrendChecker += (EndTrendClose - close[bar_index]);
+            
+            if(fullTrendChecker >= ATRwithTrendFactor * startTrendATR)
+            {
+                //--- Create markers for trend
+                string start_name = "TrendStart_" + TimeToString(StartTrendBarTime);
+                string end_name = "TrendEnd_" + TimeToString(EndTrendBarTime);
+                
+                double start_price = GetCloseAtTime(StartTrendBarTime, time, close, rates_total);
+                double end_price = GetCloseAtTime(EndTrendBarTime, time, close, rates_total);
+                
+                if(StartTrendBarTime == previous_EndTrendBarTime)
+                {
+                    // Combined start and end
+                    if(ShowLabels)
+                    {
+                        CreateTrendLabel(start_name + "_Label", StartTrendBarTime, start_price, 
+                                       "Start Up and End Down Trend", ColorBoth, ANCHOR_LOWER);
+                        CreateTrendLabel(end_name + "_Label", EndTrendBarTime, end_price, 
+                                       "End Up Trend", ColorEndTrend, ANCHOR_UPPER);
+                    }
+                    if(ShowArrows)
+                    {
+                        CreateTrendArrow(start_name + "_Arrow", StartTrendBarTime, start_price, 
+                                       ArrowUpCode, ColorBoth, false);
+                        CreateTrendArrow(end_name + "_Arrow", EndTrendBarTime, end_price, 
+                                       ArrowDownCode, ColorEndTrend, true);
+                    }
+                }
+                else
+                {
+                    // Separate start and end
+                    if(ShowLabels)
+                    {
+                        CreateTrendLabel(start_name + "_Label", StartTrendBarTime, start_price, 
+                                       "Start Up Trend", ColorStartUpTrend, ANCHOR_LOWER);
+                        CreateTrendLabel(end_name + "_Label", EndTrendBarTime, end_price, 
+                                       "End Up Trend", ColorEndTrend, ANCHOR_UPPER);
+                    }
+                    if(ShowArrows)
+                    {
+                        CreateTrendArrow(start_name + "_Arrow", StartTrendBarTime, start_price, 
+                                       ArrowUpCode, ColorStartUpTrend, false);
+                        CreateTrendArrow(end_name + "_Arrow", EndTrendBarTime, end_price, 
+                                       ArrowDownCode, ColorEndTrend, true);
+                    }
+                }
+                previous_EndTrendBarTime = EndTrendBarTime;
+            }
+            
+            //--- Reset for new trend
+            if(counterTrendChecker > 0.0)
+            {
+                StartTrendBarTime = time[bar_index + 1];
+                startTrendATR = atr_buffer[bar_index + 1];
+                fullTrendChecker = close[bar_index] - open[bar_index];
+                counterTrendChecker = 0.1;
+                reversal = false;
+            }
+            else
+            {
+                StartTrendBarTime = EndTrendBarTime;
+                startTrendATR = endTrendATR;
+                fullTrendChecker = counterTrendChecker;
+                counterTrendChecker = -0.1;
+                DownTrend = true;
+                UpTrend = false;
+                reversal = false;
+            }
+        }
+        
+        //--- Handle reversal continuation
+        if(reversal && UpTrend && close[bar_index] - close[bar_index + 1] > 0.0 && counterTrendChecker > 0.0)
+        {
+            reversal = false;
+            counterTrendChecker = 0.1;
+        }
+        else if(reversal && DownTrend && close[bar_index] - close[bar_index + 1] < 0.0 && counterTrendChecker < 0.0)
+        {
+            reversal = false;
+            counterTrendChecker = -0.1;
+        }
+        
+        //--- Determine overall trend direction
+        if(fullTrendChecker > 0.0)
+        {
+            UpTrend = true;
+            DownTrend = false;
+        }
+        else if(fullTrendChecker < 0.0)
+        {
+            UpTrend = false;
+            DownTrend = true;
+        }
+    }
+    
+    return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+//| Create trend label                                               |
+//+------------------------------------------------------------------+
+void CreateTrendLabel(string name, datetime label_time, double price, string text, color label_color, ENUM_ANCHOR_POINT anchor)
+{
+    //--- Delete existing label if it exists
+    ObjectDelete(0, name);
+    
+    //--- Create new label
+    if(ObjectCreate(0, name, OBJ_TEXT, 0, label_time, price))
+    {
+        ObjectSetString(0, name, OBJPROP_TEXT, text);
+        ObjectSetInteger(0, name, OBJPROP_COLOR, label_color);
+        ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 8);
+        ObjectSetInteger(0, name, OBJPROP_ANCHOR, anchor);
+        ObjectSetString(0, name, OBJPROP_FONT, "Arial");
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Create trend arrow                                               |
+//+------------------------------------------------------------------+
+void CreateTrendArrow(string name, datetime arrow_time, double price, int arrow_code, color arrow_color, bool above_candle)
+{
+    //--- Delete existing arrow if it exists
+    ObjectDelete(0, name);
+    
+    //--- Adjust price position based on arrow direction
+    double adjusted_price = price;
+    if(above_candle)
+    {
+        // Position arrow above the candle
+        adjusted_price = price + (Point() * 50); // Adjust offset as needed
+    }
+    else
+    {
+        // Position arrow below the candle
+        adjusted_price = price - (Point() * 50); // Adjust offset as needed
+    }
+    
+    //--- Create new arrow
+    if(ObjectCreate(0, name, OBJ_ARROW, 0, arrow_time, adjusted_price))
+    {
+        ObjectSetInteger(0, name, OBJPROP_ARROWCODE, arrow_code);
+        ObjectSetInteger(0, name, OBJPROP_COLOR, arrow_color);
+        ObjectSetInteger(0, name, OBJPROP_WIDTH, ArrowSize);
+        ObjectSetInteger(0, name, OBJPROP_BACK, false);
+        ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+        ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+        ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Get close price at specific time                                |
+//+------------------------------------------------------------------+
+double GetCloseAtTime(datetime search_time, const datetime &time[], const double &close[], int rates_total)
+{
+    for(int i = 0; i < rates_total; i++)
+    {
+        if(time[i] == search_time)
+            return close[i];
+    }
+    return 0.0; // Return 0 if time not found
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator deinitialization function                      |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+    //--- Release ATR handle
+    if(atr_handle != INVALID_HANDLE)
+        IndicatorRelease(atr_handle);
+    
+    //--- Remove all trend labels and arrows
+    ObjectsDeleteAll(0, "TrendStart_");
+    ObjectsDeleteAll(0, "TrendEnd_");
+}
